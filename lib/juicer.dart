@@ -83,7 +83,18 @@ class JuiceGenerator extends Generator {
         for (final field in element.fields) {
           String fieldName = fieldNames[field.name];
           if (fieldName != null) {
-            buffer.writeln("${_quote(fieldName)}: val.${field.name},");
+            if (field.type is InterfaceType) {
+              InterfaceType ift = field.type;
+              buffer.writeln("// isBottom: ${ift.isBottom}");
+              buffer.writeln("// isObject: ${ift.isObject}");
+              buffer.writeln("// isUndefined: ${ift.isUndefined}");
+              buffer.writeln("// isVoid: ${ift.isVoid}");
+            }
+            if (isLikeNum(field.type)) {
+              _writeNumber(fieldName, field, buffer);
+            } else {
+              buffer.writeln("${_quote(fieldName)}: val.${field.name},");
+            }
           } else {
             buffer.writeln("// ${field.name} is ignored");
           }
@@ -94,7 +105,11 @@ class JuiceGenerator extends Generator {
         for (final field in element.fields) {
           String fieldName = fieldNames[field.name];
           if (fieldName != null) {
-            buffer.writeln("..${field.name} = map[${_quote(fieldName)}]");
+            if (isLikeNum(field.type)) {
+              _readNumber(fieldName, field, buffer);
+            } else {
+              buffer.writeln("..${field.name} = map[${_quote(fieldName)}]");
+            }
           } else {
             buffer.writeln("// ${field.name} is ignored");
           }
@@ -112,6 +127,42 @@ class JuiceGenerator extends Generator {
     return "$importDeclarations\n$buffer";
   }
 
+  static bool isLikeIterable(DartType type) {
+    return type.isSubtypeOf(type.element.context.typeProvider.iterableType);
+  }
+
+  static bool isLikeList(DartType type) {
+    return type.isSubtypeOf(type.element.context.typeProvider.listType);
+  }
+
+  static bool isLikeMap(DartType type) {
+    return type.isSubtypeOf(type.element.context.typeProvider.mapType);
+  }
+
+  static bool isString(DartType type) {
+    return type.isEquivalentTo(type.element.context.typeProvider.stringType);
+  }
+
+  static bool isBool(DartType type) {
+    return type.isEquivalentTo(type.element.context.typeProvider.boolType);
+  }
+
+  static bool isInt(DartType type) {
+    return type.isEquivalentTo(type.element.context.typeProvider.intType);
+  }
+
+  static bool isDouble(DartType type) {
+    return type.isEquivalentTo(type.element.context.typeProvider.doubleType);
+  }
+
+  static bool isLikeNum(DartType type) {
+    return type.isSubtypeOf(type.element.context.typeProvider.numType);
+  }
+
+  static bool isNum(DartType type) {
+    return type.isEquivalentTo(type.element.context.typeProvider.numType);
+  }
+
   static Map<String, String> _fieldNames(ClassElement element) {
     Map<String, String> result = {};
     Map<String, List<PropertyAccessorElement>> accessorsByName = {};
@@ -122,8 +173,8 @@ class JuiceGenerator extends Generator {
       List<Element> metadataSources = [field];
       metadataSources
           .addAll(accessorsByName[field.name] ?? <PropertyAccessorElement>[]);
-      Iterable<ElementAnnotation> annotations = metadataSources
-          .expand((s) => s.metadata);
+      Iterable<ElementAnnotation> annotations =
+          metadataSources.expand((s) => s.metadata);
       List<DartObject> propertyMetadata = annotations
           .map((a) => a.computeConstantValue())
           .where((m) => _isOwnObject(m, typeName: "Property"))
@@ -169,5 +220,21 @@ class JuiceGenerator extends Generator {
   static String _quote(String s) {
     String js = json.encode(s);
     return js.replaceAll(r"$", r"\$");
+  }
+
+  void _writeNumber(String fieldName, FieldElement field, StringBuffer buffer) {
+    buffer.writeln("${_quote(fieldName)}: val.${field.name},");
+  }
+
+  void _readNumber(String fieldName, FieldElement field, StringBuffer buffer) {
+    String suffix;
+    if (isInt(field.type)) {
+      suffix = "?.toInt()";
+    } else if (isDouble(field.type)) {
+      suffix = "?.toDouble()";
+    } else {
+      suffix = "";
+    }
+    buffer.writeln("..${field.name} = map[${_quote(fieldName)}]$suffix");
   }
 }

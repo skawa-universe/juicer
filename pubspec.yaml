@@ -1,0 +1,8 @@
+name: juicer
+
+environment:
+  sdk: ">=2.0.0"
+
+dependencies:
+  source_gen:
+  build:

@@ -1,0 +1,15 @@
+targets:
+  $default:
+    builders:
+      juicer|juice_generator:
+        enabled: true
+
+builders:
+  juicer:
+    target: "juicer"
+    import: "package:juicer/juicer.dart"
+    builder_factories: ["juiceGenerator"]
+    build_extensions: {".dart": [".juiced.g.part"]}
+    auto_apply: dependents
+    build_to: cache
+    applies_builders: ["source_gen"]

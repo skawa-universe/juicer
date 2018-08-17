@@ -7,7 +7,7 @@ targets:
 builders:
   juicer:
     target: "juicer"
-    import: "package:juicer/juicer.dart"
+    import: "package:juicer/generator.dart"
     builder_factories: ["juiceGenerator"]
     build_extensions: {".dart": [".juiced.g.part"]}
     auto_apply: dependents

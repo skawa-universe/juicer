@@ -1,6 +1,7 @@
 import "dart:async";
 import "dart:convert";
 import "dart:mirrors";
+import "package:analyzer/src/generated/engine.dart" show AnalysisContext;
 import "package:analyzer/dart/element/element.dart";
 import "package:analyzer/dart/element/type.dart";
 import "package:analyzer/dart/constant/value.dart";
@@ -31,14 +32,15 @@ class _JuicedClass {
 
   String get instantiation => "$modelName()";
 
-  void writeMapper(Map<String, _JuicedClass> mapperById,
-      Map<String, String> importAliases, StringBuffer buffer) {
+  Map<String, _JuicedClass> mapperById;
+
+  void writeMapper(StringBuffer buffer) {
     String name = mapperName;
     String typeName = modelName;
-    buffer.writeln("class $name extends _Mapper<$typeName> {");
+    buffer.writeln("class $name extends ClassMapper<$typeName> {");
     buffer.writeln("const $name();");
     buffer.writeln(
-        "Map<String, dynamic> toMap(_MapperContext context, $typeName val) => {");
+        "Map<String, dynamic> toMap(Juicer juicer, $typeName val) => {");
     Map<String, String> fieldNames = _fieldNames(element);
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
@@ -47,15 +49,15 @@ class _JuicedClass {
           _writeNumber(fieldName, field, buffer);
         } else if (isLikeIterable(field.type)) {
           buffer.writeln(
-              "${_quote(fieldName)}: val.${field.name}?.map(context.encode)?.toList(),");
+              "${_quote(fieldName)}: val.${field.name}?.map(juicer.encode)?.toList(),");
         } else if (isLikeMap(field.type)) {
           buffer.writeln("${_quote(fieldName)}: val.${field.name} == null "
               "? null "
               ": new Map.fromIterable(val.${field.name}.keys, "
-              "value: (k) => context.encode(val.${field.name}[k])),");
+              "value: (k) => juicer.encode(val.${field.name}[k])),");
         } else if (!isBool(field.type) && !isString(field.type)) {
           buffer.writeln(
-              "${_quote(fieldName)}: context.encode(val.${field.name}),");
+              "${_quote(fieldName)}: juicer.encode(val.${field.name}),");
         } else {
           // bool, String will work just fine
           buffer.writeln("${_quote(fieldName)}: val.${field.name},");
@@ -66,7 +68,7 @@ class _JuicedClass {
     }
     buffer.writeln("};");
     buffer.writeln(
-        "$typeName fromMap(_MapperContext context, "
+        "$typeName fromMap(Juicer juicer, "
         "Map<String, dynamic> map, $typeName empty) => empty");
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
@@ -74,25 +76,16 @@ class _JuicedClass {
         if (isLikeNum(field.type)) {
           _readNumber(fieldName, field, buffer);
         } else if (isLikeIterable(field.type)) {
-          String template = "null";
-          if (field.type is ParameterizedType) {
-            ParameterizedType pt = field.type;
-            DartType type = pt.typeArguments.first;
-            _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
-            if (mapper != null) template = "() => ${mapper.instantiation}";
-          }
+          String template = _templateBody(field, 0);
           buffer.writeln(
-              "..${field.name} = context.decode(map[${_quote(fieldName)}], $template)");
+              "..${field.name} = juicer.decodeIterable(map[${_quote(fieldName)}], $template)");
         } else if (isLikeMap(field.type)) {
-          String template = "null";
-          if (field.type is ParameterizedType) {
-            ParameterizedType pt = field.type;
-            DartType type = pt.typeArguments[1];
-            _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
-            if (mapper != null) template = mapper.instantiation;
-          }
+          String template = _templateBody(field, 1);
           buffer.writeln(
-              "..${field.name} = context.decode(map[${_quote(fieldName)}], () => $template)");
+              "..${field.name} = juicer.decodeMap(map[${_quote(fieldName)}], $template)");
+        } else if (!isBool(field.type) && !isString(field.type)) {
+          String template = _templateBodyByType(field, field.type);
+          buffer.writeln("..${field.name} = juicer.decode(map[${_quote(fieldName)}], $template)");
         } else {
           // bool, String will work just fine
           buffer.writeln("..${field.name} = map[${_quote(fieldName)}]");
@@ -102,6 +95,20 @@ class _JuicedClass {
       }
     }
     buffer.writeln(";}");
+  }
+
+  String _templateBody(FieldElement field, int index) {
+    if (field.type is! ParameterizedType) return "null";
+    DartType type = (field.type as ParameterizedType).typeArguments[index];
+    return _templateBodyByType(field, type);
+  }
+
+  String _templateBodyByType(FieldElement field, DartType type) {
+    if (isDouble(type, context: field.context)) return "(dynamic val) => val?.toDouble()";
+    if (isInt(type, context: field.context)) return "(dynamic val) => val?.toInt()";
+    _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
+    if (mapper != null) return "(_) => ${mapper.instantiation}";
+    return null;
   }
 
   static bool isLikeIterable(DartType type) {
@@ -124,12 +131,12 @@ class _JuicedClass {
     return type.isEquivalentTo(type.element.context.typeProvider.boolType);
   }
 
-  static bool isInt(DartType type) {
-    return type.isEquivalentTo(type.element.context.typeProvider.intType);
+  static bool isInt(DartType type, {AnalysisContext context}) {
+    return type.isEquivalentTo((context ?? type.element.context).typeProvider.intType);
   }
 
-  static bool isDouble(DartType type) {
-    return type.isEquivalentTo(type.element.context.typeProvider.doubleType);
+  static bool isDouble(DartType type, {AnalysisContext context}) {
+    return type.isEquivalentTo((context ?? type.element.context).typeProvider.doubleType);
   }
 
   static bool isLikeNum(DartType type) {
@@ -247,19 +254,7 @@ class JuiceGenerator extends Generator {
           alias = importAliases[importDecl] = "_\$i${++importCounter}";
         }
         if (buffer.isEmpty) {
-          buffer.writeln("abstract class _Mapper<T> {");
-          buffer.writeln("const _Mapper();");
-          buffer.writeln(
-              "Map<String, dynamic> toMap(_MapperContext context, T val);");
-          buffer.writeln(
-              "T fromMap(_MapperContext context, Map<String, dynamic> map, T empty);");
-          buffer.writeln("}");
-          buffer.writeln("class _MapperContext {");
-          buffer.writeln("const _MapperContext(this.mappers);");
-          buffer.writeln("dynamic encode(dynamic val);");
-          buffer.writeln("dynamic decode(dynamic val, [dynamic targetFactory()]);");
-          buffer.writeln("final Map<Type, _Mapper> mappers;");
-          buffer.writeln("}");
+          buffer.writeln("import \"package:juicer/juicer.dart\";");
         }
         String typeName = "$alias.${element.name}";
         _JuicedClass mapper = new _JuicedClass(name, typeName, element);
@@ -269,13 +264,14 @@ class JuiceGenerator extends Generator {
     }
     buffer..write("// ")..writeln(mapperByTypeId.keys.join("\n// "));
     for (_JuicedClass mapper in mappers.values) {
-      mapper.writeMapper(mapperByTypeId, importAliases, buffer);
+      mapper.mapperById = mapperByTypeId;
+      mapper.writeMapper(buffer);
     }
-    buffer.writeln("const Map<Type, _Mapper> _juicers = const {");
+    buffer.writeln("const Juicer juicer = const Juicer(const {");
     for (_JuicedClass mapper in mapperByTypeId.values) {
       buffer.writeln("${mapper.modelName}: const ${mapper.mapperName}(),");
     }
-    buffer.writeln("};");
+    buffer.writeln("});");
     String importDeclarations =
         importAliases.keys.map((k) => "$k as ${importAliases[k]};").join("\n");
     return "$importDeclarations\n$buffer";

@@ -77,7 +77,7 @@ Property _combineMetadata(Iterable<DeclarationMirror> mirror) {
 
 class MapperBuilder {
   List<PropertyAccessor> addClass(ClassMirror type, {bool requireJuiced: true}) {
-    if (requireJuiced && !type.metadata.any((instance) => instance.reflectee is Juiced)) return;
+    if (requireJuiced && !type.metadata.any((instance) => instance.reflectee is Juiced)) return [];
     Set<Symbol> processedAccessors = new Set();
     final Map<Symbol, DeclarationMirror> declarations = type.declarations;
     for (Symbol fieldName in declarations.keys) {
@@ -214,4 +214,21 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   static final ClassMirror mapClass = reflectClass(Map);
   static final ClassMirror listClass = reflectClass(List);
   static final ClassMirror iterableClass = reflectClass(Iterable);
+}
+
+Juicer createJuicerForLibraries({bool packageUriFilter(Uri uri)}) {
+  MirrorSystem mirrorSystem = currentMirrorSystem();
+  Map<Uri, LibraryMirror> libraries = mirrorSystem.libraries;
+  Iterable<Uri> uris = libraries.keys;
+  if (packageUriFilter != null) uris = uris.where(packageUriFilter);
+  Map<Type, ClassMapper> classes = {};
+  for (Uri libUri in uris) {
+    for (DeclarationMirror dm in libraries[libUri].declarations.values) {
+      if (dm is! ClassMirror) continue;
+      if (!dm.metadata.any((meta) => meta.reflectee is Juiced)) continue;
+      Type type = (dm as ClassMirror).reflectedType;
+      classes[type] = new MirrorClassMapper.forClass(type);
+    }
+  }
+  return new Juicer(new Map.unmodifiable(classes));
 }

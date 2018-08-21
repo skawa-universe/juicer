@@ -99,11 +99,11 @@ class _JuicedClass {
         } else if (isLikeIterable(field.type)) {
           String template = _templateBody(field, 0);
           buffer.writeln(
-              "..${field.name} = juicer.decodeIterable(map[${_quote(fieldName)}], $template)");
+              "..${field.name} = juicer.decodeIterable(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}[])");
         } else if (isLikeMap(field.type)) {
           String template = _templateBody(field, 1);
           buffer.writeln(
-              "..${field.name} = juicer.decodeMap(map[${_quote(fieldName)}], $template)");
+              "..${field.name} = juicer.decodeMap(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}{})");
         } else if (!isBool(field.type) && !isString(field.type)) {
           String template = _templateBodyByType(field, field.type);
           buffer.writeln(
@@ -119,6 +119,21 @@ class _JuicedClass {
     buffer.writeln(";}");
   }
 
+  String _typeParameters(DartType type) {
+    if (type is ParameterizedType) {
+      String list = type.typeArguments.map(_typeRef).join(",");
+      return "<$list>";
+    } else {
+      return "";
+    }
+  }
+
+  String _typeRef(DartType type) {
+    _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
+    if (mapper != null) return mapper.modelName;
+    return type.name;
+  }
+
   String _templateBody(FieldElement field, int index) {
     if (field.type is! ParameterizedType) return "null";
     DartType type = (field.type as ParameterizedType).typeArguments[index];
@@ -130,6 +145,12 @@ class _JuicedClass {
       return "(dynamic val) => val?.toDouble()";
     if (isInt(type, context: field.context))
       return "(dynamic val) => val?.toInt()";
+    if (isString(type, context: field.context))
+      return "(dynamic val) => val as String";
+    if (isBool(type, context: field.context))
+      return "(dynamic val) => val as bool";
+    if (isNum(type, context: field.context))
+      return "(dynamic val) => val as num";
     _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
     if (mapper != null) return "(_) => ${mapper.instantiation}";
     return null;
@@ -147,12 +168,14 @@ class _JuicedClass {
     return type.isAssignableTo(jsonCompatibleMap);
   }
 
-  static bool isString(DartType type) {
-    return type.isEquivalentTo(type.element.context.typeProvider.stringType);
+  static bool isString(DartType type, {AnalysisContext context}) {
+    return type.isEquivalentTo(
+        (context ?? type.element.context).typeProvider.stringType);
   }
 
-  static bool isBool(DartType type) {
-    return type.isEquivalentTo(type.element.context.typeProvider.boolType);
+  static bool isBool(DartType type, {AnalysisContext context}) {
+    return type.isEquivalentTo(
+        (context ?? type.element.context).typeProvider.boolType);
   }
 
   static bool isInt(DartType type, {AnalysisContext context}) {
@@ -169,8 +192,9 @@ class _JuicedClass {
     return type.isSubtypeOf(type.element.context.typeProvider.numType);
   }
 
-  static bool isNum(DartType type) {
-    return type.isEquivalentTo(type.element.context.typeProvider.numType);
+  static bool isNum(DartType type, {AnalysisContext context}) {
+    return type
+        .isEquivalentTo((context ?? type.element.context).typeProvider.numType);
   }
 
   static Map<String, String> _fieldNames(ClassElement element) {
@@ -180,6 +204,7 @@ class _JuicedClass {
       (accessorsByName[a.displayName] ??= <PropertyAccessorElement>[]).add(a);
     }
     for (final field in element.fields) {
+      if (field.isStatic) continue;
       List<Element> metadataSources = [field];
       metadataSources
           .addAll(accessorsByName[field.name] ?? <PropertyAccessorElement>[]);

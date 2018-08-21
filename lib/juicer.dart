@@ -5,6 +5,8 @@ abstract class ClassMapper<T> {
   T fromMap(Juicer juicer, Map<String, dynamic> map, T empty);
 }
 
+typedef T AdaptingFactory<T>(dynamic valueToAdapt);
+
 class Juicer {
   const Juicer(this.mappers);
 
@@ -21,7 +23,7 @@ class Juicer {
     return val;
   }
 
-  dynamic decode(dynamic val, [dynamic targetFactory(dynamic valToAdapt)]) {
+  dynamic decode(dynamic val, [AdaptingFactory targetFactory]) {
     if (val is Map) {
       if (targetFactory == null) {
         return decodeMap(val);
@@ -39,14 +41,28 @@ class Juicer {
     }
   }
 
-  Map decodeMap(dynamic val, [dynamic itemFactory(dynamic valToAdapt)]) {
+  Map decodeMap(dynamic val, [AdaptingFactory itemFactory, dynamic mapTemplate]) {
     if (val == null) return null;
+    if (mapTemplate != null) {
+      for (dynamic key in val.keys) {
+        mapTemplate[key] = decode(val[key], itemFactory);
+      }
+      return mapTemplate;
+    }
     return new Map.fromIterable(val.keys, value: (k) => decode(val[k], itemFactory));
   }
 
-  List decodeIterable(dynamic val, [dynamic itemFactory(dynamic valToAdapt)]) {
+  List decodeIterable(dynamic val, [AdaptingFactory itemFactory, dynamic listTemplate]) {
+    if (listTemplate != null) {
+      for (dynamic item in val) {
+        listTemplate.add(decode(item, itemFactory));
+      }
+      return listTemplate;
+    }
     return val?.map((e) => decode(e, itemFactory))?.toList();
   }
+
+  ClassMapper getMapper(Type type) => mappers[type];
 
   final Map<Type, ClassMapper> mappers;
 }

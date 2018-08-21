@@ -1,14 +1,11 @@
 import "dart:async";
 import "dart:convert";
-import "dart:mirrors";
 import "package:analyzer/src/generated/engine.dart" show AnalysisContext;
 import "package:analyzer/dart/element/element.dart";
 import "package:analyzer/dart/element/type.dart";
 import "package:analyzer/dart/constant/value.dart";
 import "package:build/build.dart";
 import "package:source_gen/source_gen.dart";
-
-import "metadata.dart";
 
 Builder juiceGenerator(BuilderOptions _) =>
     new LibraryBuilder(new JuiceGenerator(),

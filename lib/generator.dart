@@ -20,14 +20,39 @@ class JuicerError extends Error {
 }
 
 class _JuicedClass {
-  _JuicedClass(this.mapperName, this.modelName, this.element);
+  _JuicedClass(this.mapperName, this.modelName, this.element) {
+    ConstructorElement noParameterConstructor;
+    for (ConstructorElement c in element.type.constructors) {
+      if (c.name.startsWith("_")) continue;
+      bool noRequiredParameters = !c.parameters.any((p) => p.isNotOptional);
+      if (noRequiredParameters) {
+        // we prefer a 0 parameter constructor primarily
+        // we prefer the default constructor
+        if (noParameterConstructor != null &&
+            (noParameterConstructor.parameters.isEmpty &&
+                    !(c.parameters.isEmpty && c.isDefaultConstructor) ||
+                (noParameterConstructor.isDefaultConstructor &&
+                    c.parameters.isNotEmpty))) continue;
+        noParameterConstructor = c;
+        if (c.isDefaultConstructor) break;
+      }
+    }
+    if (noParameterConstructor == null) {
+      throw new JuicerError("No constructor without required parameters"
+          " found in ${element.displayName} (${element.location})");
+    }
+    _constructorSuffix = noParameterConstructor.isDefaultConstructor
+        ? ""
+        : ".${noParameterConstructor.name}";
+  }
 
-  static String _typeIdOf(Element element) => "${JuiceGenerator._libraryUri(new LibraryReader(element.library))}"
-  " ${element.name}";
+  static String _typeIdOf(Element element) =>
+      "${JuiceGenerator._libraryUri(new LibraryReader(element.library))}"
+      " ${element.name}";
 
   String get internalTypeId => _typeIdOf(element);
 
-  String get instantiation => "$modelName()";
+  String get instantiation => "$modelName$_constructorSuffix()";
 
   Map<String, _JuicedClass> mapperById;
 
@@ -64,8 +89,7 @@ class _JuicedClass {
       }
     }
     buffer.writeln("};");
-    buffer.writeln(
-        "$typeName fromMap(Juicer juicer, "
+    buffer.writeln("$typeName fromMap(Juicer juicer, "
         "Map<String, dynamic> map, $typeName empty) => empty");
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
@@ -82,7 +106,8 @@ class _JuicedClass {
               "..${field.name} = juicer.decodeMap(map[${_quote(fieldName)}], $template)");
         } else if (!isBool(field.type) && !isString(field.type)) {
           String template = _templateBodyByType(field, field.type);
-          buffer.writeln("..${field.name} = juicer.decode(map[${_quote(fieldName)}], $template)");
+          buffer.writeln(
+              "..${field.name} = juicer.decode(map[${_quote(fieldName)}], $template)");
         } else {
           // bool, String will work just fine
           buffer.writeln("..${field.name} = map[${_quote(fieldName)}]");
@@ -101,8 +126,10 @@ class _JuicedClass {
   }
 
   String _templateBodyByType(FieldElement field, DartType type) {
-    if (isDouble(type, context: field.context)) return "(dynamic val) => val?.toDouble()";
-    if (isInt(type, context: field.context)) return "(dynamic val) => val?.toInt()";
+    if (isDouble(type, context: field.context))
+      return "(dynamic val) => val?.toDouble()";
+    if (isInt(type, context: field.context))
+      return "(dynamic val) => val?.toInt()";
     _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
     if (mapper != null) return "(_) => ${mapper.instantiation}";
     return null;
@@ -129,11 +156,13 @@ class _JuicedClass {
   }
 
   static bool isInt(DartType type, {AnalysisContext context}) {
-    return type.isEquivalentTo((context ?? type.element.context).typeProvider.intType);
+    return type
+        .isEquivalentTo((context ?? type.element.context).typeProvider.intType);
   }
 
   static bool isDouble(DartType type, {AnalysisContext context}) {
-    return type.isEquivalentTo((context ?? type.element.context).typeProvider.doubleType);
+    return type.isEquivalentTo(
+        (context ?? type.element.context).typeProvider.doubleType);
   }
 
   static bool isLikeNum(DartType type) {
@@ -209,6 +238,7 @@ class _JuicedClass {
   final String mapperName;
   final String modelName;
   final ClassElement element;
+  String _constructorSuffix;
 }
 
 class JuiceGenerator extends Generator {
@@ -242,8 +272,7 @@ class JuiceGenerator extends Generator {
                 " in ${element.location}");
           }
         }
-        String importDecl =
-            "import ${_quote(_libraryUri(library))}";
+        String importDecl = "import ${_quote(_libraryUri(library))}";
         String alias;
         if (importAliases.containsKey(importDecl)) {
           alias = importAliases[importDecl];
@@ -259,7 +288,9 @@ class JuiceGenerator extends Generator {
         mapperByTypeId[mapper.internalTypeId] = mapper;
       }
     }
-    buffer..write("// ")..writeln(mapperByTypeId.keys.join("\n// "));
+    buffer
+      ..write("// ")
+      ..writeln(mapperByTypeId.keys.join("\n// "));
     for (_JuicedClass mapper in mappers.values) {
       mapper.mapperById = mapperByTypeId;
       mapper.writeMapper(buffer);
@@ -294,7 +325,8 @@ class JuiceGenerator extends Generator {
         uri.pathSegments.first == "juicer";
   }
 
-  static String _libraryUri(LibraryReader library) => library.pathToElement(library.element).toString();
+  static String _libraryUri(LibraryReader library) =>
+      library.pathToElement(library.element).toString();
 
   static String _quote(String s) {
     String js = json.encode(s);

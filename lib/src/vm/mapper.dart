@@ -26,7 +26,7 @@ class FieldAccessor extends PropertyAccessor {
 
   void setValue(InstanceMirror instance, dynamic value) => instance.setField(variableMirror.simpleName, value);
 
-  dynamic getValue(InstanceMirror instance) => instance.getField(variableMirror.simpleName);
+  dynamic getValue(InstanceMirror instance) => instance.getField(variableMirror.simpleName).reflectee;
 
   final String name;
   final VariableMirror variableMirror;
@@ -46,7 +46,7 @@ class MethodPropertyAccessor extends PropertyAccessor {
 
   void setValue(InstanceMirror instance, dynamic value) => instance.setField(fieldName, value);
 
-  dynamic getValue(InstanceMirror instance) => instance.getField(fieldName);
+  dynamic getValue(InstanceMirror instance) => instance.getField(fieldName).reflectee;
 
   final String name;
   final Symbol fieldName;
@@ -112,9 +112,9 @@ class MapperBuilder {
 }
 
 class MirrorClassMapper<T> extends ClassMapper<T> {
-  factory MirrorClassMapper() => MirrorClassMapper<T>.forClass(T);
+  factory MirrorClassMapper() => MirrorClassMapper.forClass<T>(T);
 
-  factory MirrorClassMapper.forClass(Type t) => MirrorClassMapper<T>._forClassMirror(reflectClass(t));
+  factory MirrorClassMapper.forClass(Type t) => MirrorClassMapper._forClassMirror(reflectClass(t));
 
   MirrorClassMapper._forClassMirror(this.mirror)
       : _accessors = new List.unmodifiable(new MapperBuilder().addClass(mirror)),
@@ -125,7 +125,16 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
     InstanceMirror instance = reflect(val);
     for (PropertyAccessor accessor in _accessors) {
       if (accessor.getterType != null) {
-        result[accessor.name] = juicer.encode(accessor.getValue(instance));
+        final dynamic value = accessor.getValue(instance);
+        if (value is Map) {
+          result[accessor.name] = new Map.fromIterable(value.keys, value: (k) => juicer.encode(value[k]));
+        } else if (value is Iterable) {
+          result[accessor.name] = value.map((v) => juicer.encode(v)).toList();
+        } else if (value is! String && value is! bool && value != null) {
+          result[accessor.name] = juicer.encode(value);
+        } else {
+          result[accessor.name] = value;
+        }
       }
     }
     return result;
@@ -137,7 +146,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       if (accessor.setterType == null) continue;
       dynamic value = map[accessor.name];
       dynamic mappedValue;
-      ClassMapper mapper = juicer.getMapper(value.runtimeType);
+      ClassMapper mapper = juicer.getMapper(accessor.setterType.reflectedType);
       if (mapper != null) {
         if (mapper is MirrorClassMapper) {
           mappedValue = juicer.decode(value, (_) => mapper.newInstance());
@@ -163,13 +172,20 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
         }
       } else if (value is Iterable) {
         TypeMirror setterType = accessor.setterType;
-        if (setterType is ClassMirror && setterType.isSubclassOf(iterableClass)) {
-          ClassMapper mapper = juicer.getMapper(setterType.typeArguments[1].reflectedType);
+        if (setterType is ClassMirror &&
+            (setterType.isSubclassOf(iterableClass) ||
+                setterType.superinterfaces.any((i) => i.isSubclassOf(iterableClass)))) {
+          ClassMapper mapper = juicer.getMapper(setterType.typeArguments[0].reflectedType);
           dynamic list;
           if (setterType.isSubclassOf(listClass)) {
             list = setterType.newInstance(_findConstructor(setterType).constructorName, []).reflectee;
           } else {
-            list = setterType.newInstance(_findConstructor(setterType, "empty").constructorName, []).reflectee.toList();
+            MethodMirror ctor = _findConstructor(setterType, "empty");
+            if (ctor != null) {
+              list = setterType.newInstance(ctor.constructorName, []).reflectee.toList();
+            } else {
+              list = setterType.newInstance(new Symbol("generate"), [0, () => null]).reflectee.toList();
+            }
           }
           if (mapper != null) {
             if (mapper is MirrorClassMapper) {
@@ -190,12 +206,13 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
     return instance.reflectee;
   }
 
-  T newInstance() => mirror.newInstance(_constructor.constructorName, []) as T;
+  T newInstance() => mirror.newInstance(_constructor.constructorName, []).reflectee as T;
 
   static MethodMirror _findConstructor(ClassMirror type, [String preferred = ""]) {
     MethodMirror candidate;
     for (DeclarationMirror mirror in type.declarations.values.where((m) => m is MethodMirror && m.isConstructor)) {
       MethodMirror mm = mirror;
+      if (type.isAbstract && !mm.isFactoryConstructor) continue;
       bool noRequired = !mm.parameters.any((p) => !p.isOptional);
       if (noRequired && candidate != null) {
         if (candidate.parameters.isEmpty && mm.parameters.isNotEmpty) continue;
@@ -206,6 +223,9 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
     }
     return candidate;
   }
+
+  @override
+  String toString() => mirror.simpleName.toString();
 
   final ClassMirror mirror;
   final List<PropertyAccessor> _accessors;

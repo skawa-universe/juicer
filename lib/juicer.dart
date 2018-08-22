@@ -24,6 +24,7 @@ class Juicer {
   }
 
   dynamic decode(dynamic val, [AdaptingFactory targetFactory]) {
+    if (val == null) return null;
     if (val is Map) {
       if (targetFactory == null) {
         return decodeMap(val);
@@ -53,6 +54,7 @@ class Juicer {
   }
 
   List decodeIterable(dynamic val, [AdaptingFactory itemFactory, dynamic listTemplate]) {
+    if (val == null) return null;
     if (listTemplate != null) {
       for (dynamic item in val) {
         listTemplate.add(decode(item, itemFactory));

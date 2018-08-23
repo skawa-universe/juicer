@@ -120,6 +120,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       : _accessors = new List.unmodifiable(new MapperBuilder().addClass(mirror)),
         _constructor = _findConstructor(mirror);
 
+  @override
   Map<String, dynamic> toMap(Juicer juicer, T val) {
     Map<String, dynamic> result = {};
     InstanceMirror instance = reflect(val);
@@ -140,6 +141,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
     return result;
   }
 
+  @override
   T fromMap(Juicer juicer, Map<String, dynamic> map, T empty) {
     InstanceMirror instance = reflect(empty);
     for (PropertyAccessor accessor in _accessors) {
@@ -160,12 +162,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
           ClassMapper mapper = juicer.getMapper(setterType.typeArguments[1].reflectedType);
           dynamic map = setterType.newInstance(_findConstructor(setterType).constructorName, []).reflectee;
           if (mapper != null) {
-            if (mapper is MirrorClassMapper) {
-              mappedValue = juicer.decodeMap(value, (_) => mapper.newInstance(), map);
-            } else {
-              throw JuicerError("Unknown mapper class:"
-                  " ${mapper.runtimeType} ($mapper)");
-            }
+            mappedValue = juicer.decodeMap(value, (_) => mapper.newInstance(), map);
           } else {
             mappedValue = juicer.decodeMap(value, null, map);
           }
@@ -188,12 +185,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
             }
           }
           if (mapper != null) {
-            if (mapper is MirrorClassMapper) {
-              mappedValue = juicer.decodeIterable(value, (_) => mapper.newInstance(), list);
-            } else {
-              throw JuicerError("Unknown mapper class:"
-                  " ${mapper.runtimeType} ($mapper)");
-            }
+            mappedValue = juicer.decodeIterable(value, (_) => mapper.newInstance(), list);
           } else {
             mappedValue = juicer.decodeIterable(value, null, list);
           }
@@ -206,6 +198,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
     return instance.reflectee;
   }
 
+  @override
   T newInstance() => mirror.newInstance(_constructor.constructorName, []).reflectee as T;
 
   static MethodMirror _findConstructor(ClassMirror type, [String preferred = ""]) {

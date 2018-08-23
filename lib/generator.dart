@@ -58,11 +58,11 @@ class _JuicedClass {
 
   void writeMapper(StringBuffer buffer) {
     String name = mapperName;
-    String typeName = modelName;
-    buffer.writeln("class $name extends ClassMapper<$typeName> {");
+    buffer.writeln("class $name extends ClassMapper<$modelName> {");
     buffer.writeln("const $name();");
+    buffer.writeln("@override T newInstance() => $instantiation;");
     buffer.writeln(
-        "Map<String, dynamic> toMap(Juicer juicer, $typeName val) => {");
+        "@override Map<String, dynamic> toMap(Juicer juicer, $modelName val) => {");
     Map<String, String> fieldNames = _fieldNames(element);
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
@@ -89,8 +89,8 @@ class _JuicedClass {
       }
     }
     buffer.writeln("};");
-    buffer.writeln("$typeName fromMap(Juicer juicer, "
-        "Map<String, dynamic> map, $typeName empty) => empty");
+    buffer.writeln("@override $modelName fromMap(Juicer juicer, "
+        "Map<String, dynamic> map, $modelName empty) => empty");
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
       if (fieldName != null) {

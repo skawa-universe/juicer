@@ -3,6 +3,7 @@ abstract class ClassMapper<T> {
   const ClassMapper();
   Map<String, dynamic> toMap(Juicer juicer, T val);
   T fromMap(Juicer juicer, Map<String, dynamic> map, T empty);
+  T newInstance();
 }
 
 typedef T AdaptingFactory<T>(dynamic valueToAdapt);

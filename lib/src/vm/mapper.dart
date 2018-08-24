@@ -55,6 +55,7 @@ class MethodPropertyAccessor extends PropertyAccessor {
 }
 
 Property _combineMetadata(Iterable<DeclarationMirror> mirror) {
+  mirror = mirror.where((m) => m != null);
   DeclarationMirror first = mirror.first;
   String fieldNameAsString =
       first is MethodMirror ? _fieldNameFromMethodProperty(first) : MirrorSystem.getName(first.simpleName);
@@ -133,7 +134,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
           result[accessor.name] = value.map((v) => juicer.encode(v)).toList();
         } else if (value is! String && value is! bool && value != null) {
           result[accessor.name] = juicer.encode(value);
-        } else {
+        } else if (value != null) {
           result[accessor.name] = value;
         }
       }

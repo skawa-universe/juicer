@@ -1,3 +1,4 @@
+import "dart:convert";
 
 abstract class ClassMapper<T> {
   const ClassMapper();
@@ -15,6 +16,14 @@ class Juicer {
     Map<Type, ClassMapper> union = new Map.from(mappers);
     union.addAll(other.mappers);
     return new Juicer(new Map.unmodifiable(union));
+  }
+
+  String encodeJson(dynamic val) {
+    return json.encode(encode(val));
+  }
+
+  dynamic decodeJson(String val, [AdaptingFactory targetFactory]) {
+    return decode(json.decode(val), targetFactory);
   }
 
   dynamic encode(dynamic val) {

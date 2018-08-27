@@ -14,3 +14,9 @@ class Property {
   final String name;
   final bool ignore;
 }
+
+abstract class JuicerOverride {
+  const JuicerOverride();
+
+  dynamic writeReplace() => this;
+}

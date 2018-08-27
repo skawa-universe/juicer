@@ -1,5 +1,7 @@
 import "dart:convert";
 
+import "package:juicer/metadata.dart";
+
 abstract class ClassMapper<T> {
   const ClassMapper();
   Map<String, dynamic> toMap(Juicer juicer, T val);
@@ -28,6 +30,7 @@ class Juicer {
 
   dynamic encode(dynamic val) {
     if (val == null) return null;
+    if (val is JuicerOverride) val = (val as JuicerOverride).writeReplace();
     ClassMapper mapper = mappers[val.runtimeType];
     if (mapper != null) return mapper.toMap(this, val);
     return val;

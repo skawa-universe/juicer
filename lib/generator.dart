@@ -90,7 +90,7 @@ class _JuicedClass {
     }
     buffer.writeln("});");
     buffer.writeln("@override $modelName fromMap(Juicer juicer, "
-        "Map<String, dynamic> map, $modelName empty) => empty");
+        "Map map, $modelName empty) => empty");
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
       if (fieldName != null) {

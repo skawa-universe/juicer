@@ -145,7 +145,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   }
 
   @override
-  T fromMap(Juicer juicer, Map<String, dynamic> map, T empty) {
+  T fromMap(Juicer juicer, Map map, T empty) {
     InstanceMirror instance = reflect(empty);
     for (PropertyAccessor accessor in _accessors) {
       if (accessor.setterType == null) continue;
@@ -184,7 +184,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
             if (ctor != null) {
               list = setterType.newInstance(ctor.constructorName, []).reflectee.toList();
             } else {
-              list = setterType.newInstance(new Symbol("generate"), [0, () => null]).reflectee.toList();
+              list = setterType.newInstance(new Symbol("generate"), [0, (_) => null]).reflectee.toList();
             }
           }
           if (mapper != null) {

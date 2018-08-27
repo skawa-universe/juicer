@@ -74,6 +74,11 @@ class Juicer {
     return val?.map((e) => decode(e, itemFactory))?.toList();
   }
 
+  Map<K, V> removeNullValues<K, V>(Map<K, V> map) {
+    map.removeWhere((key, value) => value == null);
+    return map;
+  }
+
   ClassMapper getMapper(Type type) => mappers[type];
 
   final Map<Type, ClassMapper> mappers;

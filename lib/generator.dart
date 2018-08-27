@@ -62,7 +62,7 @@ class _JuicedClass {
     buffer.writeln("const $name();");
     buffer.writeln("@override T newInstance() => $instantiation;");
     buffer.writeln(
-        "@override Map<String, dynamic> toMap(Juicer juicer, $modelName val) => {");
+        "@override Map<String, dynamic> toMap(Juicer juicer, $modelName val) => juicer.removeNullValues({");
     Map<String, String> fieldNames = _fieldNames(element);
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
@@ -88,7 +88,7 @@ class _JuicedClass {
         buffer.writeln("// ${field.name} is ignored");
       }
     }
-    buffer.writeln("};");
+    buffer.writeln("});");
     buffer.writeln("@override $modelName fromMap(Juicer juicer, "
         "Map<String, dynamic> map, $modelName empty) => empty");
     for (final field in element.fields) {

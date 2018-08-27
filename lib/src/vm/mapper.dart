@@ -230,6 +230,12 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   static final ClassMirror iterableClass = reflectClass(Iterable);
 }
 
+Juicer juiceLibraries(Iterable<String> libraries) {
+  Set<String> libSet = libraries.toSet();
+  return createJuicerForLibraries(packageUriFilter: (uri) =>
+    uri.scheme == "package" && uri.pathSegments.isNotEmpty && libSet.contains(uri.pathSegments.first));
+}
+
 Juicer createJuicerForLibraries({bool packageUriFilter(Uri uri)}) {
   MirrorSystem mirrorSystem = currentMirrorSystem();
   Map<Uri, LibraryMirror> libraries = mirrorSystem.libraries;

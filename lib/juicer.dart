@@ -33,6 +33,8 @@ class Juicer {
     if (val is JuicerOverride) val = (val as JuicerOverride).writeReplace();
     ClassMapper mapper = mappers[val.runtimeType];
     if (mapper != null) return mapper.toMap(this, val);
+    if (val is Map) return Map.fromIterable(val.keys, key: (k) => k as String, value: (k) => encode(val[k]));
+    if (val is Iterable) return val.map((e) => encode(e)).toList();
     return val;
   }
 

@@ -94,23 +94,24 @@ class _JuicedClass {
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
       if (fieldName != null) {
+        String settingPrefix = "..${field.name} = !map.containsKey(${_quote(fieldName)}) ? empty.${field.name} :";
         if (isLikeNum(field.type)) {
-          _readNumber(fieldName, field, buffer);
+          _readNumber(settingPrefix, fieldName, field, buffer);
         } else if (isLikeIterable(field.type)) {
           String template = _templateBody(field, 0);
           buffer.writeln(
-              "..${field.name} = juicer.decodeIterable(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}[])");
+              "$settingPrefix juicer.decodeIterable(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}[])");
         } else if (isLikeMap(field.type)) {
           String template = _templateBody(field, 1);
           buffer.writeln(
-              "..${field.name} = juicer.decodeMap(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}{})");
+              "$settingPrefix juicer.decodeMap(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}{})");
         } else if (!isBool(field.type) && !isString(field.type)) {
           String template = _templateBodyByType(field, field.type);
           buffer.writeln(
-              "..${field.name} = juicer.decode(map[${_quote(fieldName)}], $template)");
+              "$settingPrefix juicer.decode(map[${_quote(fieldName)}], $template)");
         } else {
           // bool, String will work just fine
-          buffer.writeln("..${field.name} = map[${_quote(fieldName)}]");
+          buffer.writeln("$settingPrefix map[${_quote(fieldName)}]");
         }
       } else {
         buffer.writeln("// ${field.name} is ignored");
@@ -237,7 +238,7 @@ class _JuicedClass {
     buffer.writeln("${_quote(fieldName)}: val.${field.name},");
   }
 
-  static void _readNumber(
+  static void _readNumber(String settingPrefix,
       String fieldName, FieldElement field, StringBuffer buffer) {
     String suffix;
     if (isInt(field.type)) {
@@ -247,7 +248,7 @@ class _JuicedClass {
     } else {
       suffix = "";
     }
-    buffer.writeln("..${field.name} = map[${_quote(fieldName)}]$suffix");
+    buffer.writeln("$settingPrefix map[${_quote(fieldName)}]$suffix");
   }
 
   static String _quote(String s) => JuiceGenerator._quote(s);

@@ -148,7 +148,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   T fromMap(Juicer juicer, Map map, T empty) {
     InstanceMirror instance = reflect(empty);
     for (PropertyAccessor accessor in _accessors) {
-      if (accessor.setterType == null) continue;
+      if (accessor.setterType == null || !map.containsKey(accessor.name)) continue;
       dynamic value = map[accessor.name];
       dynamic mappedValue;
       ClassMapper mapper = juicer.getMapper(accessor.setterType.reflectedType);

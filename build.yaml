@@ -9,7 +9,7 @@ builders:
     target: "juicer"
     import: "package:juicer/generator.dart"
     builder_factories: ["juiceGenerator"]
-    build_extensions: {".dart": [".juiced.g.part"]}
+    build_extensions: {".dart": [".j.dart"]}
     auto_apply: dependents
-    build_to: cache
+    build_to: source
     applies_builders: ["source_gen"]

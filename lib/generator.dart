@@ -9,7 +9,8 @@ import "package:source_gen/source_gen.dart";
 
 Builder juiceGenerator(BuilderOptions _) =>
     new LibraryBuilder(new JuiceGenerator(),
-        additionalOutputExtensions: ["juiced"]);
+        generatedExtension: ".j.dart",
+        additionalOutputExtensions: []);
 
 class JuicerError extends Error {
   JuicerError(this.message);
@@ -60,7 +61,7 @@ class _JuicedClass {
     String name = mapperName;
     buffer.writeln("class $name extends ClassMapper<$modelName> {");
     buffer.writeln("const $name();");
-    buffer.writeln("@override T newInstance() => $instantiation;");
+    buffer.writeln("@override $modelName newInstance() => $instantiation;");
     buffer.writeln(
         "@override Map<String, dynamic> toMap(Juicer juicer, $modelName val) => juicer.removeNullValues({");
     Map<String, String> fieldNames = _fieldNames(element);
@@ -279,6 +280,8 @@ class JuiceGenerator extends Generator {
     Map<String, _JuicedClass> mapperByTypeId = {};
     Map<String, String> importAliases = {};
     int importCounter = 0;
+    buffer.writeln("import \"package:juicer/juicer.dart\";");
+    buffer.writeln("export ${_quote(_libraryUri(library))};");
     for (final e in exports) {
       LibraryReader reader = new LibraryReader(e.exportedLibrary);
       List<ClassElement> mappableClasses = reader.allElements

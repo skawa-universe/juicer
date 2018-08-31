@@ -324,6 +324,7 @@ class JuiceGenerator extends Generator {
       mapper.mapperById = mapperByTypeId;
       mapper.writeMapper(buffer);
     }
+    if (mapperByTypeId.isEmpty) return null;
     buffer.writeln("const Juicer juicer = const Juicer(const {");
     for (_JuicedClass mapper in mapperByTypeId.values) {
       buffer.writeln("${mapper.modelName}: const ${mapper.mapperName}(),");

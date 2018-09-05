@@ -9,7 +9,7 @@ import "package:source_gen/source_gen.dart";
 
 Builder juiceGenerator(BuilderOptions _) =>
     new LibraryBuilder(new JuiceGenerator(),
-        generatedExtension: "_j.g.dart",
+        generatedExtension: ".pb.dart",
         additionalOutputExtensions: []);
 
 class JuicerError extends Error {

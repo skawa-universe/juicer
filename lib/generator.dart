@@ -67,7 +67,7 @@ class _JuicedClass {
     Map<String, String> fieldNames = _fieldNames(element);
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
-      if (fieldName != null) {
+      if (fieldName != null && field.getter != null) {
         if (isLikeNum(field.type)) {
           _writeNumber(fieldName, field, buffer);
         } else if (isLikeIterable(field.type)) {
@@ -91,34 +91,38 @@ class _JuicedClass {
     }
     buffer.writeln("});");
     buffer.writeln("@override $modelName fromMap(Juicer juicer, "
-        "Map map, $modelName empty) => empty");
+        "Map map, $modelName empty) {");
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
-      if (fieldName != null) {
-        String settingPrefix = "..${field.name} = !map.containsKey(${_quote(fieldName)}) ? empty.${field.name} :";
+      if (fieldName != null && field.setter != null) {
+        String settingPrefix = "if (map.containsKey(${_quote(fieldName)})) empty.${field.name} = ";
         if (isLikeNum(field.type)) {
           _readNumber(settingPrefix, fieldName, field, buffer);
+          buffer.writeln(";");
         } else if (isLikeIterable(field.type)) {
           String template = _templateBody(field, 0);
-          buffer.writeln(
-              "$settingPrefix juicer.decodeIterable(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}[])");
+          buffer.writeln("$settingPrefix juicer.decodeIterable(map[${_quote(fieldName)}], "
+              "$template, ${_typeParameters(field.type)}[]) as List${_typeParameters(field.type)};");
         } else if (isLikeMap(field.type)) {
           String template = _templateBody(field, 1);
-          buffer.writeln(
-              "$settingPrefix juicer.decodeMap(map[${_quote(fieldName)}], $template, ${_typeParameters(field.type)}{})");
+          buffer.writeln("$settingPrefix juicer.decodeMap(map[${_quote(fieldName)}], "
+              "$template, ${_typeParameters(field.type)}{}) as Map${_typeParameters(field.type)};");
         } else if (!isBool(field.type) && !isString(field.type)) {
           String template = _templateBodyByType(field, field.type);
           buffer.writeln(
-              "$settingPrefix juicer.decode(map[${_quote(fieldName)}], $template)");
+              "$settingPrefix juicer.decode(map[${_quote(fieldName)}], $template);");
         } else {
           // bool, String will work just fine
-          buffer.writeln("$settingPrefix map[${_quote(fieldName)}]");
+          buffer.writeln("$settingPrefix map[${_quote(fieldName)}];");
         }
       } else {
         buffer.writeln("// ${field.name} is ignored");
       }
     }
-    buffer.writeln(";}");
+    // end of method
+    buffer.writeln("return empty; }");
+    // end of class
+    buffer.writeln("}");
   }
 
   String _typeParameters(DartType type) {
@@ -249,7 +253,7 @@ class _JuicedClass {
     } else {
       suffix = "";
     }
-    buffer.writeln("$settingPrefix map[${_quote(fieldName)}]$suffix");
+    buffer.write("$settingPrefix map[${_quote(fieldName)}]$suffix");
   }
 
   static String _quote(String s) => JuiceGenerator._quote(s);

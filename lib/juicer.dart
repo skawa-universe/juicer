@@ -65,7 +65,7 @@ class Juicer {
       }
       return mapTemplate;
     }
-    return new Map.fromIterable(val.keys, value: (k) => decode(val[k], itemFactory));
+    return new Map<String, dynamic>.fromIterable(val.keys, value: (k) => decode(val[k], itemFactory));
   }
 
   List decodeIterable(dynamic val, [AdaptingFactory itemFactory, dynamic listTemplate]) {

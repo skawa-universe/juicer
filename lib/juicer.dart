@@ -86,5 +86,11 @@ class Juicer {
 
   ClassMapper getMapper(Type type) => mappers[type];
 
+  @override
+  String toString() {
+    String mapperList = mappers.keys.join(", ");
+    return "Juicer($mapperList)";
+  }
+
   final Map<Type, ClassMapper> mappers;
 }

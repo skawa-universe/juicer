@@ -305,7 +305,7 @@ class JuiceGenerator extends Generator {
                 " in ${element.location}");
           }
         }
-        String importDecl = "import ${_quote(_libraryUri(library))}";
+        String importDecl = "import ${_quote(_libraryUri(reader))}";
         String alias;
         if (importAliases.containsKey(importDecl)) {
           alias = importAliases[importDecl];

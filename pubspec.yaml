@@ -1,8 +1,12 @@
 name: juicer
+version: 0.5.0
+author: Peter Siroki <psiroki@skawa.hu>
+description: Lightweight JSON serialization library for plain, mutable classes
 
 environment:
-  sdk: ">=2.0.0"
+  sdk: ">=2.0.0 <3.0.0"
 
 dependencies:
-  source_gen:
-  build:
+  analyzer: ">=0.32.4 <0.33.0"
+  build: ">=0.12.7+3 <0.13.0"
+  source_gen: ">=0.9.0 <0.10.0"

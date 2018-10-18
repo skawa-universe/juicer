@@ -220,6 +220,30 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
     return candidate;
   }
 
+  Set<Type> referencedTypes() {
+    Set<Type> referred = Set();
+    for (PropertyAccessor accessor in _accessors) {
+      addReferredTypes(referred, accessor.getterType);
+      addReferredTypes(referred, accessor.setterType);
+    }
+    return referred;
+  }
+
+  static void addReferredTypes(Set<Type> types, TypeMirror t) {
+    Type rawType = t.reflectedType;
+    // ignore primitive types
+    if (rawType == int || rawType == double || rawType == bool || rawType == String || rawType == Object) return;
+    if (t is ClassMirror) {
+      if (t.isSubclassOf(mapClass)) {
+        addReferredTypes(types, t.typeArguments[1]);
+      } else if (t.isSubclassOf(iterableClass)) {
+        addReferredTypes(types, t.typeArguments[0]);
+      } else {
+        types.add(t.reflectedType);
+      }
+    }
+  }
+
   @override
   String toString() => mirror.simpleName.toString();
 
@@ -230,6 +254,23 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   static final ClassMirror mapClass = reflectClass(Map);
   static final ClassMirror listClass = reflectClass(List);
   static final ClassMirror iterableClass = reflectClass(Iterable);
+}
+
+Juicer juiceClasses(Iterable<Type> classes, {bool juiceReferenced: true}) {
+  Set<Type> referenced = Set();
+  Map<Type, ClassMapper> mappers = {};
+  while (true) {
+    for (Type type in classes) {
+      MirrorClassMapper mapper = new MirrorClassMapper.forClass(type);
+      mappers[type] = mapper;
+      if (juiceReferenced) referenced.addAll(mapper.referencedTypes());
+    }
+    if (!juiceReferenced) break;
+    referenced.removeAll(mappers.keys);
+    if (referenced.isEmpty) break;
+    classes = referenced;
+  }
+  return new Juicer(new Map.unmodifiable(mappers));
 }
 
 Juicer juiceLibraries(Iterable<String> libraries) {

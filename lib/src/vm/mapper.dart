@@ -161,7 +161,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
         }
       } else if (value is Map) {
         TypeMirror setterType = accessor.setterType;
-        if (setterType is ClassMirror && setterType.isSubclassOf(mapClass)) {
+        if (setterType is ClassMirror && isMap(setterType)) {
           ClassMapper mapper = juicer.getMapper(setterType.typeArguments[1].reflectedType);
           dynamic map = setterType.newInstance(_findConstructor(setterType).constructorName, []).reflectee;
           if (mapper != null) {
@@ -172,9 +172,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
         }
       } else if (value is Iterable) {
         TypeMirror setterType = accessor.setterType;
-        if (setterType is ClassMirror &&
-            (setterType.isSubclassOf(iterableClass) ||
-                setterType.superinterfaces.any((i) => i.isSubclassOf(iterableClass)))) {
+        if (setterType is ClassMirror && isIterable(setterType)) {
           ClassMapper mapper = juicer.getMapper(setterType.typeArguments[0].reflectedType);
           dynamic list;
           if (setterType.isSubclassOf(listClass)) {
@@ -232,11 +230,16 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   static void addReferredTypes(Set<Type> types, TypeMirror t) {
     Type rawType = t.reflectedType;
     // ignore primitive types
-    if (rawType == int || rawType == double || rawType == bool || rawType == String || rawType == Object) return;
+    if (rawType == int ||
+        rawType == double ||
+        rawType == bool ||
+        rawType == String ||
+        rawType == Object ||
+        rawType == Null) return;
     if (t is ClassMirror) {
-      if (t.isSubclassOf(mapClass)) {
+      if (isMap(mapClass)) {
         addReferredTypes(types, t.typeArguments[1]);
-      } else if (t.isSubclassOf(iterableClass)) {
+      } else if (isIterable(iterableClass)) {
         addReferredTypes(types, t.typeArguments[0]);
       } else {
         types.add(t.reflectedType);
@@ -250,6 +253,12 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   final ClassMirror mirror;
   final List<PropertyAccessor> _accessors;
   final MethodMirror _constructor;
+
+  static bool isIterable(TypeMirror type) =>
+      type is ClassMirror &&
+      (type.isSubclassOf(iterableClass) || type.superinterfaces.any((i) => i.isSubclassOf(iterableClass)));
+
+  static bool isMap(TypeMirror type) => type is ClassMirror && type.isSubclassOf(mapClass);
 
   static final ClassMirror mapClass = reflectClass(Map);
   static final ClassMirror listClass = reflectClass(List);
@@ -275,8 +284,9 @@ Juicer juiceClasses(Iterable<Type> classes, {bool juiceReferenced: true}) {
 
 Juicer juiceLibraries(Iterable<String> libraries) {
   Set<String> libSet = libraries.toSet();
-  return createJuicerForLibraries(packageUriFilter: (uri) =>
-    uri.scheme == "package" && uri.pathSegments.isNotEmpty && libSet.contains(uri.pathSegments.first));
+  return createJuicerForLibraries(
+      packageUriFilter: (uri) =>
+          uri.scheme == "package" && uri.pathSegments.isNotEmpty && libSet.contains(uri.pathSegments.first));
 }
 
 Juicer createJuicerForLibraries({bool packageUriFilter(Uri uri)}) {

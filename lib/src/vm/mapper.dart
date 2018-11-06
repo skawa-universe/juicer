@@ -237,9 +237,9 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
         rawType == Object ||
         rawType == Null) return;
     if (t is ClassMirror) {
-      if (isMap(mapClass)) {
+      if (isMap(t)) {
         addReferredTypes(types, t.typeArguments[1]);
-      } else if (isIterable(iterableClass)) {
+      } else if (isIterable(t)) {
         addReferredTypes(types, t.typeArguments[0]);
       } else {
         types.add(t.reflectedType);

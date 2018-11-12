@@ -120,7 +120,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       MirrorClassMapper._forClassMirror(reflectClass(t), requireJuiced: requireJuiced);
 
   MirrorClassMapper._forClassMirror(this.mirror, {bool requireJuiced: true})
-      : _accessors = new List.unmodifiable(new MapperBuilder().addClass(mirror)),
+      : _accessors = new List.unmodifiable(new MapperBuilder().addClass(mirror, requireJuiced: requireJuiced)),
         _constructor = _findConstructor(mirror) {
     if (_constructor == null) throw JuicerError("Could not find usable constructor for ${mirror.qualifiedName}");
   }

@@ -113,11 +113,13 @@ class MapperBuilder {
 }
 
 class MirrorClassMapper<T> extends ClassMapper<T> {
-  factory MirrorClassMapper() => MirrorClassMapper.forClass<T>(T);
+  factory MirrorClassMapper({bool requireJuiced: true}) =>
+      MirrorClassMapper.forClass<T>(T, requireJuiced: requireJuiced);
 
-  factory MirrorClassMapper.forClass(Type t) => MirrorClassMapper._forClassMirror(reflectClass(t));
+  factory MirrorClassMapper.forClass(Type t, {bool requireJuiced: true}) =>
+      MirrorClassMapper._forClassMirror(reflectClass(t), requireJuiced: requireJuiced);
 
-  MirrorClassMapper._forClassMirror(this.mirror)
+  MirrorClassMapper._forClassMirror(this.mirror, {bool requireJuiced: true})
       : _accessors = new List.unmodifiable(new MapperBuilder().addClass(mirror)),
         _constructor = _findConstructor(mirror) {
     if (_constructor == null) throw JuicerError("Could not find usable constructor for ${mirror.qualifiedName}");
@@ -265,12 +267,12 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   static final ClassMirror iterableClass = reflectClass(Iterable);
 }
 
-Juicer juiceClasses(Iterable<Type> classes, {bool juiceReferenced: true}) {
+Juicer juiceClasses(Iterable<Type> classes, {bool juiceReferenced: true, bool requireJuiced: false}) {
   Set<Type> referenced = Set();
   Map<Type, ClassMapper> mappers = {};
   while (true) {
     for (Type type in classes) {
-      MirrorClassMapper mapper = new MirrorClassMapper.forClass(type);
+      MirrorClassMapper mapper = new MirrorClassMapper.forClass(type, requireJuiced: requireJuiced);
       mappers[type] = mapper;
       if (juiceReferenced) referenced.addAll(mapper.referencedTypes());
     }

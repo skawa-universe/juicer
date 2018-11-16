@@ -114,7 +114,7 @@ class MapperBuilder {
 
 class MirrorClassMapper<T> extends ClassMapper<T> {
   factory MirrorClassMapper({bool requireJuiced: true}) =>
-      MirrorClassMapper.forClass<T>(T, requireJuiced: requireJuiced);
+      MirrorClassMapper<T>.forClass(T, requireJuiced: requireJuiced);
 
   factory MirrorClassMapper.forClass(Type t, {bool requireJuiced: true}) =>
       MirrorClassMapper._forClassMirror(reflectClass(t), requireJuiced: requireJuiced);

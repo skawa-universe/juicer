@@ -310,7 +310,7 @@ class JuiceGenerator extends Generator {
         if (importAliases.containsKey(importDecl)) {
           alias = importAliases[importDecl];
         } else {
-          alias = importAliases[importDecl] = "_\$i${++importCounter}";
+          alias = importAliases[importDecl] = "jcr_i${++importCounter}";
         }
         if (buffer.isEmpty) {
           buffer.writeln("import \"package:juicer/juicer.dart\";");

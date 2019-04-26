@@ -9,8 +9,7 @@ import "package:source_gen/source_gen.dart";
 
 Builder juiceGenerator(BuilderOptions _) =>
     new LibraryBuilder(new JuiceGenerator(),
-        generatedExtension: ".pb.dart",
-        additionalOutputExtensions: []);
+        generatedExtension: ".pb.dart", additionalOutputExtensions: []);
 
 class JuicerError extends Error {
   JuicerError(this.message);
@@ -95,17 +94,20 @@ class _JuicedClass {
     for (final field in element.fields) {
       String fieldName = fieldNames[field.name];
       if (fieldName != null && field.setter != null) {
-        String settingPrefix = "if (map.containsKey(${_quote(fieldName)})) empty.${field.name} = ";
+        String settingPrefix =
+            "if (map.containsKey(${_quote(fieldName)})) empty.${field.name} = ";
         if (isLikeNum(field.type)) {
           _readNumber(settingPrefix, fieldName, field, buffer);
           buffer.writeln(";");
         } else if (isLikeIterable(field.type)) {
           String template = _templateBody(field, 0);
-          buffer.writeln("$settingPrefix juicer.decodeIterable(map[${_quote(fieldName)}], "
+          buffer.writeln(
+              "$settingPrefix juicer.decodeIterable(map[${_quote(fieldName)}], "
               "$template, ${_typeParameters(field.type)}[]) as List${_typeParameters(field.type)};");
         } else if (isLikeMap(field.type)) {
           String template = _templateBody(field, 1);
-          buffer.writeln("$settingPrefix juicer.decodeMap(map[${_quote(fieldName)}], "
+          buffer.writeln(
+              "$settingPrefix juicer.decodeMap(map[${_quote(fieldName)}], "
               "$template, ${_typeParameters(field.type)}{}) as Map${_typeParameters(field.type)};");
         } else if (!isBool(field.type) && !isString(field.type)) {
           String template = _templateBodyByType(field, field.type);
@@ -135,8 +137,7 @@ class _JuicedClass {
   }
 
   String _typeRef(DartType type) {
-    if (type.isDynamic)
-      return type.name;
+    if (type.isDynamic) return type.name;
     _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
     if (mapper != null) return mapper.modelName;
     return type.name;
@@ -149,8 +150,7 @@ class _JuicedClass {
   }
 
   String _templateBodyByType(FieldElement field, DartType type) {
-    if (type.isDynamic)
-      return null;
+    if (type.isDynamic) return null;
     if (isDouble(type, context: field.context))
       return "(dynamic val) => val?.toDouble()";
     if (isInt(type, context: field.context))
@@ -247,8 +247,8 @@ class _JuicedClass {
     buffer.writeln("${_quote(fieldName)}: val.${field.name},");
   }
 
-  static void _readNumber(String settingPrefix,
-      String fieldName, FieldElement field, StringBuffer buffer) {
+  static void _readNumber(String settingPrefix, String fieldName,
+      FieldElement field, StringBuffer buffer) {
     String suffix;
     if (isInt(field.type)) {
       suffix = "?.toInt()";

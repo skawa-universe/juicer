@@ -9,7 +9,8 @@ class Property {
 
   Property withName(String newName) => Property(name: newName, ignore: ignore);
 
-  Property withIgnore(bool newIgnore) => Property(name: name, ignore: newIgnore);
+  Property withIgnore(bool newIgnore) =>
+      Property(name: name, ignore: newIgnore);
 
   final String name;
   final bool ignore;

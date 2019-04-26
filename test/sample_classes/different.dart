@@ -10,7 +10,7 @@ class Different {
   String fooString;
   Something something;
 
-  Map<String, /*List<int>*/dynamic> deep; // deep types are not supported yet
+  Map<String, /*List<int>*/ dynamic> deep; // deep types are not supported yet
 
   int get readOnly => 7;
 

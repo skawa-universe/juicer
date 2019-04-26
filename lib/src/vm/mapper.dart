@@ -22,11 +22,15 @@ class FieldAccessor extends PropertyAccessor {
   FieldAccessor(this.name, this.variableMirror);
 
   TypeMirror get getterType => variableMirror.type;
-  TypeMirror get setterType => variableMirror.isFinal || variableMirror.isConst ? null : variableMirror.type;
+  TypeMirror get setterType => variableMirror.isFinal || variableMirror.isConst
+      ? null
+      : variableMirror.type;
 
-  void setValue(InstanceMirror instance, dynamic value) => instance.setField(variableMirror.simpleName, value);
+  void setValue(InstanceMirror instance, dynamic value) =>
+      instance.setField(variableMirror.simpleName, value);
 
-  dynamic getValue(InstanceMirror instance) => instance.getField(variableMirror.simpleName).reflectee;
+  dynamic getValue(InstanceMirror instance) =>
+      instance.getField(variableMirror.simpleName).reflectee;
 
   final String name;
   final VariableMirror variableMirror;
@@ -44,9 +48,11 @@ class MethodPropertyAccessor extends PropertyAccessor {
   TypeMirror get getterType => getter?.returnType;
   TypeMirror get setterType => setter?.parameters?.first?.type;
 
-  void setValue(InstanceMirror instance, dynamic value) => instance.setField(fieldName, value);
+  void setValue(InstanceMirror instance, dynamic value) =>
+      instance.setField(fieldName, value);
 
-  dynamic getValue(InstanceMirror instance) => instance.getField(fieldName).reflectee;
+  dynamic getValue(InstanceMirror instance) =>
+      instance.getField(fieldName).reflectee;
 
   final String name;
   final Symbol fieldName;
@@ -57,12 +63,15 @@ class MethodPropertyAccessor extends PropertyAccessor {
 Property _combineMetadata(Iterable<DeclarationMirror> mirror) {
   mirror = mirror.where((m) => m != null);
   DeclarationMirror first = mirror.first;
-  String fieldNameAsString =
-      first is MethodMirror ? _fieldNameFromMethodProperty(first) : MirrorSystem.getName(first.simpleName);
+  String fieldNameAsString = first is MethodMirror
+      ? _fieldNameFromMethodProperty(first)
+      : MirrorSystem.getName(first.simpleName);
   bool ignore = fieldNameAsString.startsWith("_");
   Property result = new Property(name: fieldNameAsString, ignore: ignore);
-  for (Property p
-      in mirror.expand((m) => m?.metadata ?? []).map((meta) => meta.reflectee).where((meta) => meta is Property)) {
+  for (Property p in mirror
+      .expand((m) => m?.metadata ?? [])
+      .map((meta) => meta.reflectee)
+      .where((meta) => meta is Property)) {
     if (p.name != null) {
       if (p.ignore != null) {
         result = p;
@@ -77,8 +86,11 @@ Property _combineMetadata(Iterable<DeclarationMirror> mirror) {
 }
 
 class MapperBuilder {
-  List<PropertyAccessor> addClass(ClassMirror type, {bool requireJuiced: true}) {
-    if (requireJuiced && !type.metadata.any((instance) => instance.reflectee is Juiced)) return [];
+  List<PropertyAccessor> addClass(ClassMirror type,
+      {bool requireJuiced = true}) {
+    if (requireJuiced &&
+        !type.metadata.any((instance) => instance.reflectee is Juiced))
+      return [];
     Set<Symbol> processedAccessors = new Set();
     final Map<Symbol, DeclarationMirror> declarations = type.declarations;
     for (Symbol fieldName in declarations.keys) {
@@ -90,7 +102,8 @@ class MapperBuilder {
         if (!p.ignore) accessor = new FieldAccessor(p.name, declaration);
       } else if (declaration is MethodMirror) {
         if (processedAccessors.contains(declaration.simpleName)) continue;
-        if (declaration.isStatic || !declaration.isGetter && !declaration.isSetter) continue;
+        if (declaration.isStatic ||
+            !declaration.isGetter && !declaration.isSetter) continue;
         String rawName = _fieldNameFromMethodProperty(declaration);
         MethodMirror getter;
         MethodMirror setter;
@@ -102,7 +115,8 @@ class MapperBuilder {
           setter = declarations[new Symbol("$rawName=")];
         }
         Property p = _combineMetadata([getter, setter]);
-        if (!p.ignore) accessor = new MethodPropertyAccessor(p.name, getter, setter);
+        if (!p.ignore)
+          accessor = new MethodPropertyAccessor(p.name, getter, setter);
       }
       if (accessor != null) accessors.add(accessor);
     }
@@ -113,16 +127,20 @@ class MapperBuilder {
 }
 
 class MirrorClassMapper<T> extends ClassMapper<T> {
-  factory MirrorClassMapper({bool requireJuiced: true}) =>
+  factory MirrorClassMapper({bool requireJuiced = true}) =>
       MirrorClassMapper<T>.forClass(T, requireJuiced: requireJuiced);
 
-  factory MirrorClassMapper.forClass(Type t, {bool requireJuiced: true}) =>
-      MirrorClassMapper._forClassMirror(reflectClass(t), requireJuiced: requireJuiced);
+  factory MirrorClassMapper.forClass(Type t, {bool requireJuiced = true}) =>
+      MirrorClassMapper._forClassMirror(reflectClass(t),
+          requireJuiced: requireJuiced);
 
-  MirrorClassMapper._forClassMirror(this.mirror, {bool requireJuiced: true})
-      : _accessors = new List.unmodifiable(new MapperBuilder().addClass(mirror, requireJuiced: requireJuiced)),
+  MirrorClassMapper._forClassMirror(this.mirror, {bool requireJuiced = true})
+      : _accessors = new List.unmodifiable(
+            new MapperBuilder().addClass(mirror, requireJuiced: requireJuiced)),
         _constructor = _findConstructor(mirror) {
-    if (_constructor == null) throw JuicerError("Could not find usable constructor for ${mirror.qualifiedName}");
+    if (_constructor == null)
+      throw JuicerError(
+          "Could not find usable constructor for ${mirror.qualifiedName}");
   }
 
   @override
@@ -133,7 +151,8 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       if (accessor.getterType != null) {
         final dynamic value = accessor.getValue(instance);
         if (value is Map) {
-          result[accessor.name] = new Map.fromIterable(value.keys, value: (k) => juicer.encode(value[k]));
+          result[accessor.name] = new Map.fromIterable(value.keys,
+              value: (k) => juicer.encode(value[k]));
         } else if (value is Iterable) {
           result[accessor.name] = value.map((v) => juicer.encode(v)).toList();
         } else if (value is! String && value is! bool && value != null) {
@@ -150,7 +169,8 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   T fromMap(Juicer juicer, Map map, T empty) {
     InstanceMirror instance = reflect(empty);
     for (PropertyAccessor accessor in _accessors) {
-      if (accessor.setterType == null || !map.containsKey(accessor.name)) continue;
+      if (accessor.setterType == null || !map.containsKey(accessor.name))
+        continue;
       dynamic value = map[accessor.name];
       dynamic mappedValue;
       ClassMapper mapper = juicer.getMapper(accessor.setterType.reflectedType);
@@ -164,10 +184,13 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       } else if (value is Map) {
         TypeMirror setterType = accessor.setterType;
         if (setterType is ClassMirror && isMap(setterType)) {
-          ClassMapper mapper = juicer.getMapper(setterType.typeArguments[1].reflectedType);
-          dynamic map = setterType.newInstance(_findConstructor(setterType).constructorName, []).reflectee;
+          ClassMapper mapper =
+              juicer.getMapper(setterType.typeArguments[1].reflectedType);
+          dynamic map = setterType.newInstance(
+              _findConstructor(setterType).constructorName, []).reflectee;
           if (mapper != null) {
-            mappedValue = juicer.decodeMap(value, (_) => mapper.newInstance(), map);
+            mappedValue =
+                juicer.decodeMap(value, (_) => mapper.newInstance(), map);
           } else {
             mappedValue = juicer.decodeMap(value, null, map);
           }
@@ -175,20 +198,29 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       } else if (value is Iterable) {
         TypeMirror setterType = accessor.setterType;
         if (setterType is ClassMirror && isIterable(setterType)) {
-          ClassMapper mapper = juicer.getMapper(setterType.typeArguments[0].reflectedType);
+          ClassMapper mapper =
+              juicer.getMapper(setterType.typeArguments[0].reflectedType);
           dynamic list;
           if (setterType.isSubclassOf(listClass)) {
-            list = setterType.newInstance(_findConstructor(setterType).constructorName, []).reflectee;
+            list = setterType.newInstance(
+                _findConstructor(setterType).constructorName, []).reflectee;
           } else {
             MethodMirror ctor = _findConstructor(setterType, "empty");
             if (ctor != null) {
-              list = setterType.newInstance(ctor.constructorName, []).reflectee.toList();
+              list = setterType
+                  .newInstance(ctor.constructorName, [])
+                  .reflectee
+                  .toList();
             } else {
-              list = setterType.newInstance(new Symbol("generate"), [0, (_) => null]).reflectee.toList();
+              list = setterType
+                  .newInstance(new Symbol("generate"), [0, (_) => null])
+                  .reflectee
+                  .toList();
             }
           }
           if (mapper != null) {
-            mappedValue = juicer.decodeIterable(value, (_) => mapper.newInstance(), list);
+            mappedValue =
+                juicer.decodeIterable(value, (_) => mapper.newInstance(), list);
           } else {
             mappedValue = juicer.decodeIterable(value, null, list);
           }
@@ -202,11 +234,14 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   }
 
   @override
-  T newInstance() => mirror.newInstance(_constructor.constructorName, []).reflectee as T;
+  T newInstance() =>
+      mirror.newInstance(_constructor.constructorName, []).reflectee as T;
 
-  static MethodMirror _findConstructor(ClassMirror type, [String preferred = ""]) {
+  static MethodMirror _findConstructor(ClassMirror type,
+      [String preferred = ""]) {
     MethodMirror candidate;
-    for (DeclarationMirror mirror in type.declarations.values.where((m) => m is MethodMirror && m.isConstructor)) {
+    for (DeclarationMirror mirror in type.declarations.values
+        .where((m) => m is MethodMirror && m.isConstructor)) {
       MethodMirror mm = mirror;
       if (type.isAbstract && !mm.isFactoryConstructor) continue;
       bool noRequired = !mm.parameters.any((p) => !p.isOptional);
@@ -258,21 +293,25 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
 
   static bool isIterable(TypeMirror type) =>
       type is ClassMirror &&
-      (type.isSubclassOf(iterableClass) || type.superinterfaces.any((i) => i.isSubclassOf(iterableClass)));
+      (type.isSubclassOf(iterableClass) ||
+          type.superinterfaces.any((i) => i.isSubclassOf(iterableClass)));
 
-  static bool isMap(TypeMirror type) => type is ClassMirror && type.isSubclassOf(mapClass);
+  static bool isMap(TypeMirror type) =>
+      type is ClassMirror && type.isSubclassOf(mapClass);
 
   static final ClassMirror mapClass = reflectClass(Map);
   static final ClassMirror listClass = reflectClass(List);
   static final ClassMirror iterableClass = reflectClass(Iterable);
 }
 
-Juicer juiceClasses(Iterable<Type> classes, {bool juiceReferenced: true, bool requireJuiced: false}) {
+Juicer juiceClasses(Iterable<Type> classes,
+    {bool juiceReferenced = true, bool requireJuiced = false}) {
   Set<Type> referenced = Set();
   Map<Type, ClassMapper> mappers = {};
   while (true) {
     for (Type type in classes) {
-      MirrorClassMapper mapper = new MirrorClassMapper.forClass(type, requireJuiced: requireJuiced);
+      MirrorClassMapper mapper =
+          new MirrorClassMapper.forClass(type, requireJuiced: requireJuiced);
       mappers[type] = mapper;
       if (juiceReferenced) referenced.addAll(mapper.referencedTypes());
     }
@@ -288,7 +327,9 @@ Juicer juiceLibraries(Iterable<String> libraries) {
   Set<String> libSet = libraries.toSet();
   return createJuicerForLibraries(
       packageUriFilter: (uri) =>
-          uri.scheme == "package" && uri.pathSegments.isNotEmpty && libSet.contains(uri.pathSegments.first));
+          uri.scheme == "package" &&
+          uri.pathSegments.isNotEmpty &&
+          libSet.contains(uri.pathSegments.first));
 }
 
 Juicer createJuicerForLibraries({bool packageUriFilter(Uri uri)}) {

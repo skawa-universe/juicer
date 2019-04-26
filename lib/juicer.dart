@@ -33,7 +33,9 @@ class Juicer {
     if (val is JuicerOverride) val = (val as JuicerOverride).writeReplace();
     ClassMapper mapper = mappers[val.runtimeType];
     if (mapper != null) return mapper.toMap(this, val);
-    if (val is Map) return Map.fromIterable(val.keys, key: (k) => k as String, value: (k) => encode(val[k]));
+    if (val is Map)
+      return Map.fromIterable(val.keys,
+          key: (k) => k as String, value: (k) => encode(val[k]));
     if (val is Iterable) return val.map((e) => encode(e)).toList();
     return val;
   }
@@ -57,7 +59,8 @@ class Juicer {
     }
   }
 
-  Map decodeMap(dynamic val, [AdaptingFactory itemFactory, dynamic mapTemplate]) {
+  Map decodeMap(dynamic val,
+      [AdaptingFactory itemFactory, dynamic mapTemplate]) {
     if (val == null) return null;
     if (mapTemplate != null) {
       for (dynamic key in val.keys) {
@@ -65,10 +68,12 @@ class Juicer {
       }
       return mapTemplate;
     }
-    return new Map<String, dynamic>.fromIterable(val.keys, value: (k) => decode(val[k], itemFactory));
+    return new Map<String, dynamic>.fromIterable(val.keys,
+        value: (k) => decode(val[k], itemFactory));
   }
 
-  List decodeIterable(dynamic val, [AdaptingFactory itemFactory, dynamic listTemplate]) {
+  List decodeIterable(dynamic val,
+      [AdaptingFactory itemFactory, dynamic listTemplate]) {
     if (val == null) return null;
     if (listTemplate != null) {
       for (dynamic item in val) {

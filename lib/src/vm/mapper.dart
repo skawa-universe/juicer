@@ -304,6 +304,13 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   static final ClassMirror iterableClass = reflectClass(Iterable);
 }
 
+/// Juices a collection of [classes].
+///
+/// Will not juice the referenced classes if [juiceReferenced] is set to `false`
+/// (the default is `true`).
+///
+/// Will require the `@juiced` annotation on all the classes if [requireJuiced]
+/// is set to `true` (the default is `false`)
 Juicer juiceClasses(Iterable<Type> classes,
     {bool juiceReferenced = true, bool requireJuiced = false}) {
   Set<Type> referenced = Set();
@@ -323,6 +330,10 @@ Juicer juiceClasses(Iterable<Type> classes,
   return new Juicer(new Map.unmodifiable(mappers));
 }
 
+/// Juices the libraries with the names in [libraries].
+///
+/// For example if every juicable class is in a `comm` package
+/// `juiceLibraries(["comm"])` will return a juicer for that package.
 Juicer juiceLibraries(Iterable<String> libraries) {
   Set<String> libSet = libraries.toSet();
   return createJuicerForLibraries(
@@ -332,6 +343,9 @@ Juicer juiceLibraries(Iterable<String> libraries) {
           libSet.contains(uri.pathSegments.first));
 }
 
+/// Enumerates all the libraries and looks for `@juiced` classes.
+///
+/// The libraries may be filtered by package URI using [packageUriFilter].
 Juicer createJuicerForLibraries({bool packageUriFilter(Uri uri)}) {
   MirrorSystem mirrorSystem = currentMirrorSystem();
   Map<Uri, LibraryMirror> libraries = mirrorSystem.libraries;

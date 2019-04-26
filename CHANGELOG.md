@@ -1,3 +1,7 @@
+## 0.9.0+2
+
+* Documentation
+
 ## 0.9.0+1
 
 * Formatting changes

@@ -1,0 +1,8 @@
+#  Supported lint rules and documentation:
+#   http://dart-lang.github.io/linter/lints/
+
+include: package:pedantic/analysis_options.yaml
+
+linter:
+  rules:
+    - annotate_overrides

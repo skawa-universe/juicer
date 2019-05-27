@@ -47,8 +47,10 @@ void main() {
 A `Juicer` object “knows” how to encode or decode some classes into maps, and
 handles all the JSON primitives as well. There are two modes of operation:
 
-- using the build system it will generate the class-specific encoding code, and
-will generate a `Juicer juicer` variable for those
+- using the build system for every dart file which exports other dart files with
+  juiced classes it will generate the class-specific encoder classes for all those
+  classes and a global `Juicer juicer` variable for those classes in the generated
+  file
 - using mirrors it can create `Juicer` objects on the fly
 
 In both cases all classes must be marked with the `@juiced` annotation

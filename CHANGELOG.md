@@ -1,3 +1,7 @@
+## 0.9.0+4
+
+* Fixed lint warnings
+
 ## 0.9.0+3
 
 * README update

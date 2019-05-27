@@ -14,6 +14,7 @@ Builder juiceGenerator(BuilderOptions _) =>
 class JuicerError extends Error {
   JuicerError(this.message);
 
+  @override
   String toString() => message;
 
   final String message;
@@ -151,16 +152,21 @@ class _JuicedClass {
 
   String _templateBodyByType(FieldElement field, DartType type) {
     if (type.isDynamic) return null;
-    if (isDouble(type, context: field.context))
+    if (isDouble(type, context: field.context)) {
       return "(dynamic val) => val?.toDouble()";
-    if (isInt(type, context: field.context))
+    }
+    if (isInt(type, context: field.context)) {
       return "(dynamic val) => val?.toInt()";
-    if (isString(type, context: field.context))
+    }
+    if (isString(type, context: field.context)) {
       return "(dynamic val) => val as String";
-    if (isBool(type, context: field.context))
+    }
+    if (isBool(type, context: field.context)) {
       return "(dynamic val) => val as bool";
-    if (isNum(type, context: field.context))
+    }
+    if (isNum(type, context: field.context)) {
       return "(dynamic val) => val as num";
+    }
     _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
     if (mapper != null) return "(_) => ${mapper.instantiation}";
     return null;

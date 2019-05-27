@@ -21,17 +21,23 @@ abstract class PropertyAccessor {
 class FieldAccessor extends PropertyAccessor {
   FieldAccessor(this.name, this.variableMirror);
 
+  @override
   TypeMirror get getterType => variableMirror.type;
+
+  @override
   TypeMirror get setterType => variableMirror.isFinal || variableMirror.isConst
       ? null
       : variableMirror.type;
 
+  @override
   void setValue(InstanceMirror instance, dynamic value) =>
       instance.setField(variableMirror.simpleName, value);
 
+  @override
   dynamic getValue(InstanceMirror instance) =>
       instance.getField(variableMirror.simpleName).reflectee;
 
+  @override
   final String name;
   final VariableMirror variableMirror;
 }
@@ -45,15 +51,21 @@ class MethodPropertyAccessor extends PropertyAccessor {
   MethodPropertyAccessor(this.name, this.getter, this.setter)
       : fieldName = new Symbol(_fieldNameFromMethodProperty(getter ?? setter));
 
+  @override
   TypeMirror get getterType => getter?.returnType;
+  
+  @override
   TypeMirror get setterType => setter?.parameters?.first?.type;
 
+  @override
   void setValue(InstanceMirror instance, dynamic value) =>
       instance.setField(fieldName, value);
 
+  @override
   dynamic getValue(InstanceMirror instance) =>
       instance.getField(fieldName).reflectee;
 
+  @override
   final String name;
   final Symbol fieldName;
   final MethodMirror getter;
@@ -89,8 +101,9 @@ class MapperBuilder {
   List<PropertyAccessor> addClass(ClassMirror type,
       {bool requireJuiced = true}) {
     if (requireJuiced &&
-        !type.metadata.any((instance) => instance.reflectee is Juiced))
+        !type.metadata.any((instance) => instance.reflectee is Juiced)) {
       return [];
+    }
     Set<Symbol> processedAccessors = new Set();
     final Map<Symbol, DeclarationMirror> declarations = type.declarations;
     for (Symbol fieldName in declarations.keys) {
@@ -115,8 +128,9 @@ class MapperBuilder {
           setter = declarations[new Symbol("$rawName=")];
         }
         Property p = _combineMetadata([getter, setter]);
-        if (!p.ignore)
+        if (!p.ignore) {
           accessor = new MethodPropertyAccessor(p.name, getter, setter);
+        }
       }
       if (accessor != null) accessors.add(accessor);
     }
@@ -138,9 +152,10 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       : _accessors = new List.unmodifiable(
             new MapperBuilder().addClass(mirror, requireJuiced: requireJuiced)),
         _constructor = _findConstructor(mirror) {
-    if (_constructor == null)
+    if (_constructor == null) {
       throw JuicerError(
           "Could not find usable constructor for ${mirror.qualifiedName}");
+    }
   }
 
   @override
@@ -169,8 +184,9 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   T fromMap(Juicer juicer, Map map, T empty) {
     InstanceMirror instance = reflect(empty);
     for (PropertyAccessor accessor in _accessors) {
-      if (accessor.setterType == null || !map.containsKey(accessor.name))
+      if (accessor.setterType == null || !map.containsKey(accessor.name)) {
         continue;
+      }
       dynamic value = map[accessor.name];
       dynamic mappedValue;
       ClassMapper mapper = juicer.getMapper(accessor.setterType.reflectedType);

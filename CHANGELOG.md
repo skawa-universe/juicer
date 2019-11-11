@@ -1,3 +1,8 @@
+## 0.10.0+1
+
+* Fixed the problems with the botched release
+
+
 ## 0.10.0
 
 * The build system seems to support alternative file suffixes now,

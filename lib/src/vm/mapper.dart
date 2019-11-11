@@ -49,7 +49,7 @@ String _fieldNameFromMethodProperty(MethodMirror getterOrSetter) {
 
 class MethodPropertyAccessor extends PropertyAccessor {
   MethodPropertyAccessor(this.name, this.getter, this.setter)
-      : fieldName = new Symbol(_fieldNameFromMethodProperty(getter ?? setter));
+      : fieldName = Symbol(_fieldNameFromMethodProperty(getter ?? setter));
 
   @override
   TypeMirror get getterType => getter?.returnType;
@@ -79,11 +79,11 @@ Property _combineMetadata(Iterable<DeclarationMirror> mirror) {
       ? _fieldNameFromMethodProperty(first)
       : MirrorSystem.getName(first.simpleName);
   bool ignore = fieldNameAsString.startsWith("_");
-  Property result = new Property(name: fieldNameAsString, ignore: ignore);
+  Property result = Property(name: fieldNameAsString, ignore: ignore);
   for (Property p in mirror
       .expand((m) => m?.metadata ?? [])
       .map((meta) => meta.reflectee)
-      .where((meta) => meta is Property)) {
+      .whereType<Property>()) {
     if (p.name != null) {
       if (p.ignore != null) {
         result = p;
@@ -104,7 +104,7 @@ class MapperBuilder {
         !type.metadata.any((instance) => instance.reflectee is Juiced)) {
       return [];
     }
-    Set<Symbol> processedAccessors = new Set();
+    Set<Symbol> processedAccessors = Set();
     final Map<Symbol, DeclarationMirror> declarations = type.declarations;
     for (Symbol fieldName in declarations.keys) {
       final DeclarationMirror declaration = declarations[fieldName];
@@ -112,7 +112,7 @@ class MapperBuilder {
       if (declaration is VariableMirror) {
         if (declaration.isStatic) continue;
         Property p = _combineMetadata([declaration]);
-        if (!p.ignore) accessor = new FieldAccessor(p.name, declaration);
+        if (!p.ignore) accessor = FieldAccessor(p.name, declaration);
       } else if (declaration is MethodMirror) {
         if (processedAccessors.contains(declaration.simpleName)) continue;
         if (declaration.isStatic ||
@@ -122,14 +122,14 @@ class MapperBuilder {
         MethodMirror setter;
         if (declaration.isSetter) {
           setter = declaration;
-          getter = declarations[new Symbol(rawName)];
+          getter = declarations[Symbol(rawName)];
         } else {
           getter = declaration;
-          setter = declarations[new Symbol("$rawName=")];
+          setter = declarations[Symbol("$rawName=")];
         }
         Property p = _combineMetadata([getter, setter]);
         if (!p.ignore) {
-          accessor = new MethodPropertyAccessor(p.name, getter, setter);
+          accessor = MethodPropertyAccessor(p.name, getter, setter);
         }
       }
       if (accessor != null) accessors.add(accessor);
@@ -149,8 +149,8 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
           requireJuiced: requireJuiced);
 
   MirrorClassMapper._forClassMirror(this.mirror, {bool requireJuiced = true})
-      : _accessors = new List.unmodifiable(
-            new MapperBuilder().addClass(mirror, requireJuiced: requireJuiced)),
+      : _accessors = List.unmodifiable(
+            MapperBuilder().addClass(mirror, requireJuiced: requireJuiced)),
         _constructor = _findConstructor(mirror) {
     if (_constructor == null) {
       throw JuicerError(
@@ -166,7 +166,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       if (accessor.getterType != null) {
         final dynamic value = accessor.getValue(instance);
         if (value is Map) {
-          result[accessor.name] = new Map.fromIterable(value.keys,
+          result[accessor.name] = Map.fromIterable(value.keys,
               value: (k) => juicer.encode(value[k]));
         } else if (value is Iterable) {
           result[accessor.name] = value.map((v) => juicer.encode(v)).toList();
@@ -229,7 +229,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
                   .toList();
             } else {
               list = setterType
-                  .newInstance(new Symbol("generate"), [0, (_) => null])
+                  .newInstance(Symbol("generate"), [0, (_) => null])
                   .reflectee
                   .toList();
             }
@@ -334,7 +334,7 @@ Juicer juiceClasses(Iterable<Type> classes,
   while (true) {
     for (Type type in classes) {
       MirrorClassMapper mapper =
-          new MirrorClassMapper.forClass(type, requireJuiced: requireJuiced);
+          MirrorClassMapper.forClass(type, requireJuiced: requireJuiced);
       mappers[type] = mapper;
       if (juiceReferenced) referenced.addAll(mapper.referencedTypes());
     }
@@ -343,7 +343,7 @@ Juicer juiceClasses(Iterable<Type> classes,
     if (referenced.isEmpty) break;
     classes = referenced;
   }
-  return new Juicer(new Map.unmodifiable(mappers));
+  return Juicer(Map.unmodifiable(mappers));
 }
 
 /// Juices the libraries with the names in [libraries].
@@ -373,8 +373,8 @@ Juicer createJuicerForLibraries({bool packageUriFilter(Uri uri)}) {
       if (dm is! ClassMirror) continue;
       if (!dm.metadata.any((meta) => meta.reflectee is Juiced)) continue;
       Type type = (dm as ClassMirror).reflectedType;
-      classes[type] = new MirrorClassMapper.forClass(type);
+      classes[type] = MirrorClassMapper.forClass(type);
     }
   }
-  return new Juicer(new Map.unmodifiable(classes));
+  return Juicer(Map.unmodifiable(classes));
 }

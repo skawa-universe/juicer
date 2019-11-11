@@ -8,7 +8,7 @@ import "package:build/build.dart";
 import "package:source_gen/source_gen.dart";
 
 Builder juiceGenerator(BuilderOptions _) =>
-    new LibraryBuilder(new JuiceGenerator(),
+    LibraryBuilder(JuiceGenerator(),
         generatedExtension: ".juicer.dart", additionalOutputExtensions: []);
 
 class JuicerError extends Error {
@@ -39,7 +39,7 @@ class _JuicedClass {
       }
     }
     if (noParameterConstructor == null) {
-      throw new JuicerError("No constructor without required parameters"
+      throw JuicerError("No constructor without required parameters"
           " found in ${element.displayName} (${element.location})");
     }
     _constructorSuffix = noParameterConstructor.isDefaultConstructor
@@ -48,7 +48,7 @@ class _JuicedClass {
   }
 
   static String _typeIdOf(Element element) =>
-      "${JuiceGenerator._libraryUri(new LibraryReader(element.library))}"
+      "${JuiceGenerator._libraryUri(LibraryReader(element.library))}"
       " ${element.name}";
 
   String get internalTypeId => _typeIdOf(element);
@@ -76,7 +76,7 @@ class _JuicedClass {
         } else if (isLikeMap(field.type)) {
           buffer.writeln("${_quote(fieldName)}: val.${field.name} == null "
               "? null "
-              ": new Map.fromIterable(val.${field.name}.keys, "
+              ": Map.fromIterable(val.${field.name}.keys, "
               "value: (k) => juicer.encode(val.${field.name}[k])),");
         } else if (!isBool(field.type) && !isString(field.type)) {
           buffer.writeln(
@@ -173,44 +173,46 @@ class _JuicedClass {
   }
 
   static bool isLikeIterable(DartType type) {
-    return type
-        .isAssignableTo(type.element.context.typeProvider.iterableDynamicType);
+    return type.element.context.typeSystem.isAssignableTo(
+        type, type.element.context.typeProvider.iterableDynamicType);
   }
 
   static bool isLikeMap(DartType type) {
     final typeProvider = type.element.context.typeProvider;
-    DartType jsonCompatibleMap = typeProvider.mapType
-        .instantiate([typeProvider.stringType, typeProvider.dynamicType]);
-    return type.isAssignableTo(jsonCompatibleMap);
+    InterfaceType jsonCompatibleMap = typeProvider.mapType2(
+        typeProvider.stringType, typeProvider.dynamicType);
+    return type.element.context.typeSystem
+        .isAssignableTo(type, jsonCompatibleMap);
   }
 
   static bool isString(DartType type, {AnalysisContext context}) {
-    return type.isEquivalentTo(
-        (context ?? type.element.context).typeProvider.stringType);
+    return type.element.context.typeSystem.isAssignableTo(
+        type, (context ?? type.element.context).typeProvider.stringType);
   }
 
   static bool isBool(DartType type, {AnalysisContext context}) {
-    return type.isEquivalentTo(
-        (context ?? type.element.context).typeProvider.boolType);
+    return type.element.context.typeSystem.isAssignableTo(
+        type, (context ?? type.element.context).typeProvider.boolType);
   }
 
   static bool isInt(DartType type, {AnalysisContext context}) {
-    return type
-        .isEquivalentTo((context ?? type.element.context).typeProvider.intType);
+    return type.element.context.typeSystem.isAssignableTo(
+        type, (context ?? type.element.context).typeProvider.intType);
   }
 
   static bool isDouble(DartType type, {AnalysisContext context}) {
-    return type.isEquivalentTo(
-        (context ?? type.element.context).typeProvider.doubleType);
+    return type.element.context.typeSystem.isAssignableTo(
+        type, (context ?? type.element.context).typeProvider.doubleType);
   }
 
   static bool isLikeNum(DartType type) {
-    return type.isSubtypeOf(type.element.context.typeProvider.numType);
+    return type.element.context.typeSystem
+        .isAssignableTo(type, type.element.context.typeProvider.numType);
   }
 
   static bool isNum(DartType type, {AnalysisContext context}) {
-    return type
-        .isEquivalentTo((context ?? type.element.context).typeProvider.numType);
+    return type.element.context.typeSystem.isAssignableTo(
+        type, (context ?? type.element.context).typeProvider.numType);
   }
 
   static Map<String, String> _fieldNames(ClassElement element) {
@@ -289,7 +291,7 @@ class JuiceGenerator extends Generator {
   Future<String> generate(LibraryReader library, BuildStep buildStep) async {
     final exports = library.element.exports;
     if (exports.isEmpty) return null;
-    StringBuffer buffer = new StringBuffer();
+    StringBuffer buffer = StringBuffer();
     Map<String, _JuicedClass> mappers = {};
     Map<String, _JuicedClass> mapperByTypeId = {};
     Map<String, String> importAliases = {};
@@ -297,7 +299,7 @@ class JuiceGenerator extends Generator {
     buffer.writeln("import \"package:juicer/juicer.dart\";");
     buffer.writeln("export ${_quote(_libraryUri(library))};");
     for (final e in exports) {
-      LibraryReader reader = new LibraryReader(e.exportedLibrary);
+      LibraryReader reader = LibraryReader(e.exportedLibrary);
       List<ClassElement> mappableClasses = reader.allElements
           .where(_elementIsMappable)
           .map((Element e) => e as ClassElement)
@@ -311,7 +313,7 @@ class JuiceGenerator extends Generator {
             if (!mappers.containsKey(name)) break;
           }
           if (mappers.containsKey(name)) {
-            throw new JuicerError("Can't generate name for ${element.name}"
+            throw JuicerError("Can't generate name for ${element.name}"
                 " in ${element.location}");
           }
         }
@@ -326,7 +328,7 @@ class JuiceGenerator extends Generator {
           buffer.writeln("import \"package:juicer/juicer.dart\";");
         }
         String typeName = "$alias.${element.name}";
-        _JuicedClass mapper = new _JuicedClass(name, typeName, element);
+        _JuicedClass mapper = _JuicedClass(name, typeName, element);
         mappers[typeName] = mapper;
         mapperByTypeId[mapper.internalTypeId] = mapper;
       }
@@ -360,7 +362,7 @@ class JuiceGenerator extends Generator {
 
   static bool _isOwnType(ParameterizedType type) {
     return _isOwnUri(
-        new LibraryReader(type.element.library).pathToElement(type.element));
+        LibraryReader(type.element.library).pathToElement(type.element));
   }
 
   static bool _isOwnUri(Uri uri) {

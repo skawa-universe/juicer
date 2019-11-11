@@ -6,10 +6,10 @@ import "package:test/test.dart";
 import "sample_classes.dart";
 
 Different createDifferent(int seed) {
-  Random random = new Random(seed);
-  return new Different(new String.fromCharCodes(new List.generate(
+  Random random = Random(seed);
+  return Different(String.fromCharCodes(List.generate(
       random.nextInt(8) + 2, (_) => random.nextInt(126 - 32) + 32)))
-    ..something = (new Something()..simpleNum = seed)
+    ..something = (Something()..simpleNum = seed)
     ..deep = <String, List<int>>{
       "foo": [1, 2],
       "bar": [3, 4],
@@ -68,7 +68,7 @@ void matchSomething(dynamic val, Something expected) {
 
 Something createSampleSomething() {
   double piToACoupleOfPlaces = 3.141592654;
-  return new Something()
+  return Something()
     ..sampleDouble = 7.3
     ..integerDouble = 73
     ..simpleNum = piToACoupleOfPlaces
@@ -81,8 +81,8 @@ Something createSampleSomething() {
       "five": null,
       "six": [null, true, pi, 2, "alpha"],
     }
-    ..differentList = new List.generate(3, (i) => createDifferent(i + 7))
-    ..differentIterable = new List.generate(2, (i) => createDifferent(i + 37))
+    ..differentList = List.generate(3, (i) => createDifferent(i + 7))
+    ..differentIterable = List.generate(2, (i) => createDifferent(i + 37))
     ..intMap = {
       "alpha": 1,
       "bravo": 2,

@@ -32,9 +32,9 @@ class Juicer {
   /// able to decode the union of the types (the mappers in [other] take
   /// precedence)
   Juicer combine(Juicer other) {
-    Map<Type, ClassMapper> union = new Map.from(mappers);
+    Map<Type, ClassMapper> union = Map.from(mappers);
     union.addAll(other.mappers);
-    return new Juicer(new Map.unmodifiable(union));
+    return Juicer(Map.unmodifiable(union));
   }
 
   /// Encodes [val] to JSON
@@ -102,7 +102,7 @@ class Juicer {
       }
       return resultMap;
     }
-    return new Map<String, dynamic>.fromIterable(val.keys,
+    return Map<String, dynamic>.fromIterable(val.keys,
         value: (k) => decode(val[k], itemFactory));
   }
 

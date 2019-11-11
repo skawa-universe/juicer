@@ -2,7 +2,7 @@ class Juiced {
   const Juiced();
 }
 
-const Juiced juiced = const Juiced();
+const Juiced juiced = Juiced();
 
 class Property {
   const Property({this.name, this.ignore});

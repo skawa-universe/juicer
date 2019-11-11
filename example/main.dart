@@ -18,7 +18,7 @@ class Party {
 
 void main() {
   Juicer juicer = juiceClasses([Party]);
-  Map asMap = juicer.encode(new Party()
+  Map asMap = juicer.encode(Party()
     ..key = "company_1234556"
     ..name = "Random Ltd."
     ..country = "Sovereignland"

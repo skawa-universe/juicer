@@ -197,14 +197,14 @@ class _JuicedClass {
   static bool isInt(DartType type, {AnalysisContext context}) {
     context ??= type.element.context;
     DartType other = context.typeProvider.intType;
-    return type.element.context.typeSystem.isAssignableTo(other, type) &&
+    return context.typeSystem.isAssignableTo(other, type) &&
         context.typeSystem.isSubtypeOf(type, other);
   }
 
   static bool isDouble(DartType type, {AnalysisContext context}) {
     context ??= type.element.context;
     DartType other = context.typeProvider.doubleType;
-    return type.element.context.typeSystem.isAssignableTo(other, type) &&
+    return context.typeSystem.isAssignableTo(other, type) &&
         context.typeSystem.isSubtypeOf(type, other);
   }
 
@@ -216,7 +216,7 @@ class _JuicedClass {
   static bool isNum(DartType type, {AnalysisContext context}) {
     context ??= type.element.context;
     DartType other = context.typeProvider.numType;
-    return type.element.context.typeSystem.isAssignableTo(other, type) &&
+    return context.typeSystem.isAssignableTo(other, type) &&
         context.typeSystem.isSubtypeOf(other, type);
   }
 

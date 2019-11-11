@@ -53,7 +53,7 @@ class MethodPropertyAccessor extends PropertyAccessor {
 
   @override
   TypeMirror get getterType => getter?.returnType;
-  
+
   @override
   TypeMirror get setterType => setter?.parameters?.first?.type;
 

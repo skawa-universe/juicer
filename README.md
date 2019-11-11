@@ -72,5 +72,5 @@ The mirrors implementation provides the following functions:
 
 ### Code generator based implementation
 
-For every dart file that exports other dart files containing `@juiced` classes a `.pb.dart`
+For every dart file that exports other dart files containing `@juiced` classes a `.juicer.dart`
 file will be generated.

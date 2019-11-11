@@ -1,3 +1,8 @@
+## 0.10.0
+
+* The build system seems to support alternative file suffixes now,
+  so instead of `.pb.dart` it's `.juicer.dart`
+
 ## 0.9.0+4
 
 * Fixed lint warnings

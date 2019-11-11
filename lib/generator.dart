@@ -7,9 +7,8 @@ import "package:analyzer/dart/constant/value.dart";
 import "package:build/build.dart";
 import "package:source_gen/source_gen.dart";
 
-Builder juiceGenerator(BuilderOptions _) =>
-    LibraryBuilder(JuiceGenerator(),
-        generatedExtension: ".juicer.dart", additionalOutputExtensions: []);
+Builder juiceGenerator(BuilderOptions _) => LibraryBuilder(JuiceGenerator(),
+    generatedExtension: ".juicer.dart", additionalOutputExtensions: []);
 
 class JuicerError extends Error {
   JuicerError(this.message);
@@ -23,7 +22,7 @@ class JuicerError extends Error {
 class _JuicedClass {
   _JuicedClass(this.mapperName, this.modelName, this.element) {
     ConstructorElement noParameterConstructor;
-    for (ConstructorElement c in element.type.constructors) {
+    for (ConstructorElement c in element.constructors) {
       if (c.name.startsWith("_")) continue;
       bool noRequiredParameters = !c.parameters.any((p) => p.isNotOptional);
       if (noRequiredParameters) {
@@ -182,37 +181,43 @@ class _JuicedClass {
     InterfaceType jsonCompatibleMap = typeProvider.mapType2(
         typeProvider.stringType, typeProvider.dynamicType);
     return type.element.context.typeSystem
-        .isAssignableTo(type, jsonCompatibleMap);
+        .isAssignableTo(jsonCompatibleMap, type);
   }
 
   static bool isString(DartType type, {AnalysisContext context}) {
     return type.element.context.typeSystem.isAssignableTo(
-        type, (context ?? type.element.context).typeProvider.stringType);
+        (context ?? type.element.context).typeProvider.stringType, type);
   }
 
   static bool isBool(DartType type, {AnalysisContext context}) {
     return type.element.context.typeSystem.isAssignableTo(
-        type, (context ?? type.element.context).typeProvider.boolType);
+        (context ?? type.element.context).typeProvider.boolType, type);
   }
 
   static bool isInt(DartType type, {AnalysisContext context}) {
-    return type.element.context.typeSystem.isAssignableTo(
-        type, (context ?? type.element.context).typeProvider.intType);
+    context ??= type.element.context;
+    DartType other = context.typeProvider.intType;
+    return type.element.context.typeSystem.isAssignableTo(other, type) &&
+        context.typeSystem.isSubtypeOf(type, other);
   }
 
   static bool isDouble(DartType type, {AnalysisContext context}) {
-    return type.element.context.typeSystem.isAssignableTo(
-        type, (context ?? type.element.context).typeProvider.doubleType);
+    context ??= type.element.context;
+    DartType other = context.typeProvider.doubleType;
+    return type.element.context.typeSystem.isAssignableTo(other, type) &&
+        context.typeSystem.isSubtypeOf(type, other);
   }
 
   static bool isLikeNum(DartType type) {
     return type.element.context.typeSystem
-        .isAssignableTo(type, type.element.context.typeProvider.numType);
+        .isAssignableTo(type.element.context.typeProvider.numType, type);
   }
 
   static bool isNum(DartType type, {AnalysisContext context}) {
-    return type.element.context.typeSystem.isAssignableTo(
-        type, (context ?? type.element.context).typeProvider.numType);
+    context ??= type.element.context;
+    DartType other = context.typeProvider.numType;
+    return type.element.context.typeSystem.isAssignableTo(other, type) &&
+        context.typeSystem.isSubtypeOf(other, type);
   }
 
   static Map<String, String> _fieldNames(ClassElement element) {

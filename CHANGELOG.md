@@ -1,7 +1,10 @@
+## 0.10.0+2
+
+* Fixed the problems around `int`/`double`/`num` deserialization.
+
 ## 0.10.0+1
 
 * Fixed the problems with the botched release
-
 
 ## 0.10.0
 

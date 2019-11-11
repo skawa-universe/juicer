@@ -4,6 +4,25 @@ Lightweight JSON serialization library for plain, mutable classes.
 
 Used as a `dartson` replacement.
 
+## Important note
+
+From 0.10.0 upwards the generated juicer files will have a `.juicer.dart`
+suffix instead of `.pb.dart`, because it seems support has arrived
+for having custom suffices. If you still want to use the old version
+add a version constraint in your `pubspec.yaml` file: 
+
+```
+dependencies:
+  juicer: '^0.9.0'
+```
+
+If you're ready to use the new version:
+
+```
+dependencies:
+  juicer: '^0.10.0'
+```
+
 ## Example
 
 ```dart

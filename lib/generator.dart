@@ -139,10 +139,10 @@ class _JuicedClass {
   }
 
   String _typeRef(DartType type) {
-    if (type.isDynamic) return type.name;
+    if (type.isDynamic) return 'dynamic';
     _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
     if (mapper != null) return mapper.modelName;
-    return type.name;
+    return type.element.name;
   }
 
   String _templateBody(FieldElement field, int index) {

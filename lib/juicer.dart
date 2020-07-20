@@ -1,6 +1,8 @@
-import "dart:convert";
+// ignore_for_file: omit_local_variable_types, prefer_for_elements_to_map_fromiterable, prefer_generic_function_type_aliases
 
-import "package:juicer/metadata.dart";
+import 'dart:convert';
+
+import 'package:juicer/metadata.dart';
 
 /// Juicer uses [ClassMapper]s to convert objects
 /// of classes to and from map objects.
@@ -133,8 +135,8 @@ class Juicer {
 
   @override
   String toString() {
-    String mapperList = mappers.keys.join(", ");
-    return "Juicer($mapperList)";
+    String mapperList = mappers.keys.join(', ');
+    return 'Juicer($mapperList)';
   }
 
   /// The map of mappers in this juicer.

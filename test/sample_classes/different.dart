@@ -1,5 +1,5 @@
-import "package:juicer/metadata.dart";
-import "something.dart";
+import 'package:juicer/metadata.dart';
+import 'something.dart';
 
 @juiced
 class Different {

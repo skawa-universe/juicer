@@ -1,2 +1,2 @@
-export "something.dart";
-export "different.dart";
+export 'something.dart';
+export 'different.dart';

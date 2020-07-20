@@ -1,5 +1,5 @@
-import "package:juicer/metadata.dart" as juicer;
-import "different.dart";
+import 'package:juicer/metadata.dart' as juicer;
+import 'different.dart';
 
 class Juiced {
   const Juiced();
@@ -9,18 +9,18 @@ class Juiced {
 @Juiced()
 class Something {
   @override
-  String toString() => "Something($simpleNum)";
+  String toString() => 'Something($simpleNum)';
 
   num simpleNum;
 
-  @juicer.Property(name: "getterDecoration")
+  @juicer.Property(name: 'getterDecoration')
   int get b => 0xb;
 
   set b(int val) {}
 
   int get c => 0xc;
 
-  @juicer.Property(name: "setterDecoration")
+  @juicer.Property(name: 'setterDecoration')
   set c(int val) {}
 
   double sampleDouble;

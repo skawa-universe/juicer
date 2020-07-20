@@ -1,13 +1,17 @@
-import "dart:mirrors";
-import "package:juicer/juicer.dart";
-import "package:juicer/metadata.dart";
+// ignore_for_file: omit_local_variable_types
+
+import 'dart:mirrors';
+import 'package:juicer/juicer.dart';
+import 'package:juicer/metadata.dart';
 
 class JuicerError extends Error {
-  JuicerError(this.message);
+  JuicerError(this.message, [this.cause]);
 
   @override
-  String toString() => "JuicerError($message)";
+  String toString() =>
+      cause == null ? 'JuicerError($message)' : 'JuicerError($message: $cause)';
   final String message;
+  final Object cause;
 }
 
 abstract class PropertyAccessor {
@@ -30,8 +34,13 @@ class FieldAccessor extends PropertyAccessor {
       : variableMirror.type;
 
   @override
-  void setValue(InstanceMirror instance, dynamic value) =>
+  void setValue(InstanceMirror instance, dynamic value) {
+    try {
       instance.setField(variableMirror.simpleName, value);
+    } catch (e) {
+      throw JuicerError('Setting $name failed', e);
+    }
+  }
 
   @override
   dynamic getValue(InstanceMirror instance) =>
@@ -58,8 +67,13 @@ class MethodPropertyAccessor extends PropertyAccessor {
   TypeMirror get setterType => setter?.parameters?.first?.type;
 
   @override
-  void setValue(InstanceMirror instance, dynamic value) =>
+  void setValue(InstanceMirror instance, dynamic value) {
+    try {
       instance.setField(fieldName, value);
+    } catch (e) {
+      throw JuicerError('Setting $name failed', e);
+    }
+  }
 
   @override
   dynamic getValue(InstanceMirror instance) =>
@@ -78,7 +92,7 @@ Property _combineMetadata(Iterable<DeclarationMirror> mirror) {
   String fieldNameAsString = first is MethodMirror
       ? _fieldNameFromMethodProperty(first)
       : MirrorSystem.getName(first.simpleName);
-  bool ignore = fieldNameAsString.startsWith("_");
+  bool ignore = fieldNameAsString.startsWith('_');
   Property result = Property(name: fieldNameAsString, ignore: ignore);
   for (Property p in mirror
       .expand((m) => m?.metadata ?? [])
@@ -104,7 +118,7 @@ class MapperBuilder {
         !type.metadata.any((instance) => instance.reflectee is Juiced)) {
       return [];
     }
-    Set<Symbol> processedAccessors = Set();
+    Set<Symbol> processedAccessors = {};
     final Map<Symbol, DeclarationMirror> declarations = type.declarations;
     for (Symbol fieldName in declarations.keys) {
       final DeclarationMirror declaration = declarations[fieldName];
@@ -125,7 +139,7 @@ class MapperBuilder {
           getter = declarations[Symbol(rawName)];
         } else {
           getter = declaration;
-          setter = declarations[Symbol("$rawName=")];
+          setter = declarations[Symbol('$rawName=')];
         }
         Property p = _combineMetadata([getter, setter]);
         if (!p.ignore) {
@@ -154,7 +168,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
         _constructor = _findConstructor(mirror) {
     if (_constructor == null) {
       throw JuicerError(
-          "Could not find usable constructor for ${mirror.qualifiedName}");
+          'Could not find usable constructor for ${mirror.qualifiedName}');
     }
   }
 
@@ -194,8 +208,8 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
         if (mapper is MirrorClassMapper) {
           mappedValue = juicer.decode(value, (_) => mapper.newInstance());
         } else {
-          throw JuicerError("Unknown mapper class:"
-              " ${mapper.runtimeType} ($mapper)");
+          throw JuicerError('Unknown mapper class:'
+              ' ${mapper.runtimeType} ($mapper)');
         }
       } else if (value is Map) {
         TypeMirror setterType = accessor.setterType;
@@ -221,7 +235,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
             list = setterType.newInstance(
                 _findConstructor(setterType).constructorName, []).reflectee;
           } else {
-            MethodMirror ctor = _findConstructor(setterType, "empty");
+            MethodMirror ctor = _findConstructor(setterType, 'empty');
             if (ctor != null) {
               list = setterType
                   .newInstance(ctor.constructorName, [])
@@ -229,7 +243,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
                   .toList();
             } else {
               list = setterType
-                  .newInstance(Symbol("generate"), [0, (_) => null])
+                  .newInstance(Symbol('generate'), [0, (_) => null])
                   .reflectee
                   .toList();
             }
@@ -254,7 +268,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
       mirror.newInstance(_constructor.constructorName, []).reflectee as T;
 
   static MethodMirror _findConstructor(ClassMirror type,
-      [String preferred = ""]) {
+      [String preferred = '']) {
     MethodMirror candidate;
     for (DeclarationMirror mirror in type.declarations.values
         .where((m) => m is MethodMirror && m.isConstructor)) {
@@ -272,7 +286,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
   }
 
   Set<Type> referencedTypes() {
-    Set<Type> referred = Set();
+    Set<Type> referred = {};
     for (PropertyAccessor accessor in _accessors) {
       addReferredTypes(referred, accessor.getterType);
       addReferredTypes(referred, accessor.setterType);
@@ -329,7 +343,7 @@ class MirrorClassMapper<T> extends ClassMapper<T> {
 /// is set to `true` (the default is `false`)
 Juicer juiceClasses(Iterable<Type> classes,
     {bool juiceReferenced = true, bool requireJuiced = false}) {
-  Set<Type> referenced = Set();
+  Set<Type> referenced = {};
   Map<Type, ClassMapper> mappers = {};
   while (true) {
     for (Type type in classes) {
@@ -349,12 +363,12 @@ Juicer juiceClasses(Iterable<Type> classes,
 /// Juices the libraries with the names in [libraries].
 ///
 /// For example if every juicable class is in a `comm` package
-/// `juiceLibraries(["comm"])` will return a juicer for that package.
+/// `juiceLibraries(['comm'])` will return a juicer for that package.
 Juicer juiceLibraries(Iterable<String> libraries) {
   Set<String> libSet = libraries.toSet();
   return createJuicerForLibraries(
       packageUriFilter: (uri) =>
-          uri.scheme == "package" &&
+          uri.scheme == 'package' &&
           uri.pathSegments.isNotEmpty &&
           libSet.contains(uri.pathSegments.first));
 }
@@ -362,7 +376,7 @@ Juicer juiceLibraries(Iterable<String> libraries) {
 /// Enumerates all the libraries and looks for `@juiced` classes.
 ///
 /// The libraries may be filtered by package URI using [packageUriFilter].
-Juicer createJuicerForLibraries({bool packageUriFilter(Uri uri)}) {
+Juicer createJuicerForLibraries({bool Function(Uri uri) packageUriFilter}) {
   MirrorSystem mirrorSystem = currentMirrorSystem();
   Map<Uri, LibraryMirror> libraries = mirrorSystem.libraries;
   Iterable<Uri> uris = libraries.keys;

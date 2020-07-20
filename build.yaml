@@ -6,10 +6,10 @@ targets:
 
 builders:
   juicer:
-    target: "juicer"
-    import: "package:juicer/generator.dart"
-    builder_factories: ["juiceGenerator"]
-    build_extensions: {".dart": [".juicer.dart"]}
+    target: 'juicer'
+    import: 'package:juicer/generator.dart'
+    builder_factories: ['juiceGenerator']
+    build_extensions: {'.dart': ['.juicer.dart']}
     auto_apply: dependents
     build_to: source
-    applies_builders: ["source_gen"]
+    applies_builders: ['source_gen']

@@ -26,9 +26,9 @@ dependencies:
 ## Example
 
 ```dart
-import "dart:convert";
-import "package:juicer/juicer_vm.dart";
-import "package:juicer/metadata.dart";
+import 'dart:convert';
+import 'package:juicer/juicer_vm.dart';
+import 'package:juicer/metadata.dart';
 
 @juiced
 class Party {
@@ -36,23 +36,23 @@ class Party {
   String name;
   String country;
   String city;
-  @Property(name: "street_address")
+  @Property(name: 'street_address')
   String streetAddress;
   String zip;
 
   @Property(ignore: true)
-  String get address => "$name\n$streetAddress\n$city\n$country";
+  String get address => '$name\n$streetAddress\n$city\n$country';
 }
 
 void main() {
   Juicer juicer = juiceClasses([Party]);
   Map asMap = juicer.encode(new Party()
-    ..key = "company_1234556"
-    ..name = "Random Ltd."
-    ..country = "Sovereignland"
-    ..city = "Capitalcity"
-    ..streetAddress = "1 Main Street"
-    ..zip = "11111");
+    ..key = 'company_1234556'
+    ..name = 'Random Ltd.'
+    ..country = 'Sovereignland'
+    ..city = 'Capitalcity'
+    ..streetAddress = '1 Main Street'
+    ..zip = '11111');
   // the map is encodable to JSON (you can also use encodeJson/decodeJson)
   print(json.encode(asMap));
   // create a copy by decoding the map
@@ -84,7 +84,7 @@ The mirrors implementation provides the following functions:
 - `createJuicerForLibraries`: juices all the libraries, or a filter can be provided
   which will filter based on the package URI
 - `juiceLibraries`: juices the libraries with a specific name (for example you have a
-  `comm` library with all these classes you can call `juiceLibraries(["comm"])` to get
+  `comm` library with all these classes you can call `juiceLibraries(['comm'])` to get
   a juicer for all these)
 - `juiceClasses`: juices a list of classes, the default behavior is to juice all classes
   and the referenced classes regardless of whether they have `@juiced` annotation

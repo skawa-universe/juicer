@@ -1,3 +1,7 @@
+## 0.10.0+3
+
+* Updated the code generator for the newest version of the build system.
+
 ## 0.10.0+2
 
 * Fixed the problems around `int`/`double`/`num` deserialization.

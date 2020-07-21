@@ -2,7 +2,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'package:analyzer/src/generated/engine.dart' show AnalysisContext;
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/constant/value.dart';
@@ -280,11 +279,6 @@ class _JuicedClass {
   static bool _isOwnObject(DartObject obj, {String typeName}) =>
       JuiceGenerator._isOwnObject(obj, typeName: typeName);
 
-  static bool _isOwnType(ParameterizedType type) =>
-      JuiceGenerator._isOwnType(type);
-
-  static bool _isOwnUri(Uri uri) => JuiceGenerator._isOwnUri(uri);
-
   final String mapperName;
   final String modelName;
   final ClassElement element;
@@ -362,10 +356,10 @@ class JuiceGenerator extends Generator {
       element is ClassElement &&
       element.metadata
           .map((m) => m.computeConstantValue().type)
-          .any((type) => _isOwnType(type) && type.name == 'Juiced');
+          .any((type) => _isOwnType(type) && type.element.name == 'Juiced');
 
   static bool _isOwnObject(DartObject obj, {String typeName}) =>
-      _isOwnType(obj.type) && (typeName == null || obj.type.name == typeName);
+      _isOwnType(obj.type) && (typeName == null || obj.type.element.name == typeName);
 
   static bool _isOwnType(ParameterizedType type) {
     return _isOwnUri(

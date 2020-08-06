@@ -1,3 +1,7 @@
+## 0.10.0+4
+
+* Updated the code generator for Dart 2.9
+
 ## 0.10.0+3
 
 * Updated the code generator for the newest version of the build system.

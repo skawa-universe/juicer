@@ -182,7 +182,7 @@ class _JuicedClass {
     InterfaceType jsonCompatibleMap = typeProvider.mapType2(
         typeProvider.stringType, typeProvider.dynamicType);
     return type.element.library.typeSystem
-        .isAssignableTo(jsonCompatibleMap, type);
+        .isSubtypeOf(type, jsonCompatibleMap);
   }
 
   static bool isString(DartType type, {LibraryElement library}) {
@@ -198,20 +198,18 @@ class _JuicedClass {
   static bool isInt(DartType type, {LibraryElement library}) {
     library ??= type.element.library;
     DartType other = library.typeProvider.intType;
-    return library.typeSystem.isAssignableTo(other, type) &&
-        library.typeSystem.isSubtypeOf(type, other);
+    return library.typeSystem.isSubtypeOf(type, other);
   }
 
   static bool isDouble(DartType type, {LibraryElement library}) {
     library ??= type.element.library;
     DartType other = library.typeProvider.doubleType;
-    return library.typeSystem.isAssignableTo(other, type) &&
-        library.typeSystem.isSubtypeOf(type, other);
+    return library.typeSystem.isSubtypeOf(type, other);
   }
 
   static bool isLikeNum(DartType type) {
     return type.element.library.typeSystem
-        .isAssignableTo(type.element.library.typeProvider.numType, type);
+        .isSubtypeOf(type, type.element.library.typeProvider.numType);
   }
 
   static bool isNum(DartType type, {LibraryElement library}) {
@@ -359,7 +357,8 @@ class JuiceGenerator extends Generator {
           .any((type) => _isOwnType(type) && type.element.name == 'Juiced');
 
   static bool _isOwnObject(DartObject obj, {String typeName}) =>
-      _isOwnType(obj.type) && (typeName == null || obj.type.element.name == typeName);
+      _isOwnType(obj.type) &&
+      (typeName == null || obj.type.element.name == typeName);
 
   static bool _isOwnType(ParameterizedType type) {
     return _isOwnUri(

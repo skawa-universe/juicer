@@ -1,5 +1,5 @@
 name: juicer
-version: 0.10.0+3
+version: 0.10.0+4
 description: Lightweight JSON serialization library for plain, mutable classes
 homepage: https://github.com/skawa-universe/juicer
 

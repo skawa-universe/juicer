@@ -1,4 +1,6 @@
-// ignore_for_file: omit_local_variable_types, prefer_for_elements_to_map_fromiterable, prefer_generic_function_type_aliases
+// ignore_for_file: omit_local_variable_types
+// ignore_for_file: prefer_for_elements_to_map_fromiterable
+// ignore_for_file: prefer_generic_function_type_aliases
 
 import 'dart:convert';
 

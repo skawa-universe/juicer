@@ -181,8 +181,7 @@ class _JuicedClass {
     final typeProvider = type.element.library.typeProvider;
     InterfaceType jsonCompatibleMap = typeProvider.mapType2(
         typeProvider.stringType, typeProvider.dynamicType);
-    return type.element.library.typeSystem
-        .isSubtypeOf(type, jsonCompatibleMap);
+    return type.element.library.typeSystem.isSubtypeOf(type, jsonCompatibleMap);
   }
 
   static bool isString(DartType type, {LibraryElement library}) {

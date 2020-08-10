@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'package:analyzer/src/generated/engine.dart' show AnalysisContext;
 import 'package:analyzer/dart/element/element.dart';
 import 'package:analyzer/dart/element/type.dart';
 import 'package:analyzer/dart/constant/value.dart';
@@ -152,19 +153,19 @@ class _JuicedClass {
 
   String _templateBodyByType(FieldElement field, DartType type) {
     if (type.isDynamic) return null;
-    if (isDouble(type, library: field.library)) {
+    if (isDouble(type, context: field.context)) {
       return '(dynamic val) => val?.toDouble()';
     }
-    if (isInt(type, library: field.library)) {
+    if (isInt(type, context: field.context)) {
       return '(dynamic val) => val?.toInt()';
     }
-    if (isString(type, library: field.library)) {
+    if (isString(type, context: field.context)) {
       return '(dynamic val) => val as String';
     }
-    if (isBool(type, library: field.library)) {
+    if (isBool(type, context: field.context)) {
       return '(dynamic val) => val as bool';
     }
-    if (isNum(type, library: field.library)) {
+    if (isNum(type, context: field.context)) {
       return '(dynamic val) => val as num';
     }
     _JuicedClass mapper = mapperById[_typeIdOf(type.element)];
@@ -173,49 +174,52 @@ class _JuicedClass {
   }
 
   static bool isLikeIterable(DartType type) {
-    return type.element.library.typeSystem.isAssignableTo(
-        type, type.element.library.typeProvider.iterableDynamicType);
+    return type.element.context.typeSystem.isAssignableTo(
+        type, type.element.context.typeProvider.iterableDynamicType);
   }
 
   static bool isLikeMap(DartType type) {
-    final typeProvider = type.element.library.typeProvider;
-    InterfaceType jsonCompatibleMap = typeProvider.mapType2(
-        typeProvider.stringType, typeProvider.dynamicType);
-    return type.element.library.typeSystem.isSubtypeOf(type, jsonCompatibleMap);
+    final typeProvider = type.element.context.typeProvider;
+    InterfaceType jsonCompatibleMap = typeProvider.mapType.instantiate(
+      [typeProvider.stringType, typeProvider.dynamicType],
+    );
+    return type.element.context.typeSystem.isAssignableTo(jsonCompatibleMap, type);
   }
 
-  static bool isString(DartType type, {LibraryElement library}) {
-    return type.element.library.typeSystem.isAssignableTo(
-        (library ?? type.element.library).typeProvider.stringType, type);
+  static bool isString(DartType type, {AnalysisContext context}) {
+    return type.element.context.typeSystem.isAssignableTo(
+        (context ?? type.element.context).typeProvider.stringType, type);
   }
 
-  static bool isBool(DartType type, {LibraryElement library}) {
-    return type.element.library.typeSystem.isAssignableTo(
-        (library ?? type.element.library).typeProvider.boolType, type);
+  static bool isBool(DartType type, {AnalysisContext context}) {
+    return type.element.context.typeSystem.isAssignableTo(
+        (context ?? type.element.context).typeProvider.boolType, type);
   }
 
-  static bool isInt(DartType type, {LibraryElement library}) {
-    library ??= type.element.library;
-    DartType other = library.typeProvider.intType;
-    return library.typeSystem.isSubtypeOf(type, other);
+  static bool isInt(DartType type, {AnalysisContext context}) {
+    context ??= type.element.context;
+    DartType other = context.typeProvider.intType;
+    return context.typeSystem.isAssignableTo(other, type) &&
+        context.typeSystem.isSubtypeOf(type, other);
   }
 
-  static bool isDouble(DartType type, {LibraryElement library}) {
-    library ??= type.element.library;
-    DartType other = library.typeProvider.doubleType;
-    return library.typeSystem.isSubtypeOf(type, other);
+  static bool isDouble(DartType type, {AnalysisContext context}) {
+    context ??= type.element.context;
+    DartType other = context.typeProvider.doubleType;
+    return context.typeSystem.isAssignableTo(other, type) &&
+        context.typeSystem.isSubtypeOf(type, other);
   }
 
   static bool isLikeNum(DartType type) {
-    return type.element.library.typeSystem
-        .isSubtypeOf(type, type.element.library.typeProvider.numType);
+    return type.element.context.typeSystem
+        .isAssignableTo(type.element.context.typeProvider.numType, type);
   }
 
-  static bool isNum(DartType type, {LibraryElement library}) {
-    library ??= type.element.library;
-    DartType other = library.typeProvider.numType;
-    return library.typeSystem.isAssignableTo(other, type) &&
-        library.typeSystem.isSubtypeOf(other, type);
+  static bool isNum(DartType type, {AnalysisContext context}) {
+    context ??= type.element.context;
+    DartType other = context.typeProvider.numType;
+    return context.typeSystem.isAssignableTo(other, type) &&
+        context.typeSystem.isSubtypeOf(other, type);
   }
 
   static Map<String, String> _fieldNames(ClassElement element) {
